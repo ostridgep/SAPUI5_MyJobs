@@ -1,0 +1,953 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - Jobs</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+
+<script src="myresources/js/buildDetails.js"></script>
+<script src="myresources/js/html5sql.js"></script>  
+<script src="myresources/js/bgsync.js"></script>
+<script src="myresources/js/MyJobsDB.js"></script>
+<script src="myresources/js/MyJobsUtils.js"></script>
+<script type="text/javascript">
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+var currentStatus;
+var firstJob="";
+var EmployeeID = localStorage.getItem("EmployeeID")
+var detailFooter = new sap.m.Bar({
+		id: 'detailFooter',
+		contentRight : [
+						new sap.m.Button("changeStatus", {
+							 text: "Status",
+							 icon: "edit",
+							 press: [ function(){
+								 prepareChangeStatus();
+								 formChangeStatus.open();
+									}]
+						 })
+						]
+		
+	})
+var tconfFooter = new sap.m.Bar({
+	id: 'tconfFooter',
+	contentMiddle : [
+					new sap.m.Button("tconfFooterCreateTconf", {
+						 text: "Create",
+						 icon: "create-time-entry",
+						 press: [ function(){
+							 
+							 formTimeConf.open();
+								}]
+					 })
+					],
+	contentRight : [
+					new sap.m.Button("tconfFooterChangeStatus", {
+						 text: "Status",
+						 //icon: sap.ui.core.IconPool.getIconURI("edit"),
+						 press: [ function(){
+							 prepareChangeStatus();
+							 formChangeStatus.open();
+								}]
+					 })
+					]
+	
+})
+var standardList  = new sap.m.List(
+		  {
+			  //items:standardListItem,
+			  itemPress:[function(oEvt) {		  
+				  buildDetailsContent(oEvt.getParameter("listItem").getId());
+				 
+				  oSplitApp.to("detail")}],
+			  mode:sap.m.ListMode.SingleSelectMaster
+		  });
+	function handleChange(oEvent) {
+		var oDRS = oEvent.oSource;
+		var sFrom = oEvent.getParameter("from");
+		var sTo = oEvent.getParameter("to");
+		var bValid = oEvent.getParameter("valid");
+
+		
+
+		var oText = sap.ui.getCore().byId("TextEvent");
+		//oText.setText("Event " + iEvent + "\nId: " + oEvent.oSource.getId() + "\nFrom: " + sFrom + "\nTo: " + sTo + "\nvalid: " + bValid);
+		if (bValid) {
+			oDRS.setValueState(sap.ui.core.ValueState.None);
+		} else {
+			oDRS.setValueState(sap.ui.core.ValueState.Error);
+		}
+		
+		startDate=sFrom.getFullYear().toString()+zeroFill(sFrom.getMonth()+1)+zeroFill(sFrom.getDate())
+		endDate=sTo.getFullYear().toString()+zeroFill(sTo.getMonth()+1)+zeroFill(sTo.getDate())
+		
+	};
+	var formTimeConf = new sap.m.Dialog("dlgTimeConf",{
+      title:"Create Time Confirmation",
+      modal: true,
+      contentWidth:"1em",
+      buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+							createTimeConf(AbsenceType,startDate,endDate,
+									sap.ui.getCore().byId("Days").getValue(),
+									sap.ui.getCore().byId("Description").getValue(),
+									sap.ui.getCore().byId("Comments").getValue()); 
+							formTimeConf.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formTimeConf.close()} ]   
+					})
+					],					
+      content:[
+   			new sap.ui.layout.form.SimpleForm({
+  				minWidth : 1024,
+  				maxContainerCols : 2,
+  				content : [
+								new sap.m.Label({text:"Type"}),
+								new sap.m.SegmentedButton('tconfType', {
+									buttons: [new sap.m.Button('tconfTypeWork',{text: "Work"}),
+									          new sap.m.Button('tconfTypeTravel',{text: "Travel"})
+									          ], 
+								}),
+								
+								new sap.m.Label({text:"Employee"}),
+								new sap.m.Select('Employee',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "1",
+											text: "Jimmy Hendrix"
+										}),
+
+										new sap.ui.core.Item({
+											key: "2",
+											text: "Charley Farley"
+										}),
+
+										new sap.ui.core.Item({
+											key: "3",
+											text: "Keith Moon"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Label({text: "Start Date/Time:"}),
+								
+								new sap.m.DateTimeInput('tconfStart',{
+									width : "99%",
+									type : "DateTime",
+									displayFormat : "yyyy/MM/dd hh:mm",
+									dateValue : new Date()
+								}),
+								new sap.m.Label({text: "End Date/Time:"}),
+								new sap.m.DateTimeInput('tconfEnd',{
+									width : "99%",
+									type : "DateTime",
+									displayFormat : "yyyy/MM/dd hh:mm",
+									dateValue : new Date()
+								}),   
+								new sap.m.Label({text:"Duration"}),
+				                 new sap.m.Slider('DurationControl',
+				                		 {
+				                	value: 0,
+				                	max:120,
+				                	min:0,
+				                	step:5,
+				                	change : function(){
+				                		sap.ui.getCore().byId("Duration").setValue(sap.ui.getCore().byId("DurationControl").getValue());}
+				                	
+				                			 
+				                			 
+				                }), 
+				  
+				                new sap.m.Input("Duration",{
+			                           value : sap.ui.getCore().byId("DurationControl").getValue(),
+			                       type: sap.m.InputType.Input,
+			                       width:"50px",
+			                       change : function(){sap.ui.getCore().byId("DurationControl").setValue(parseInt(sap.ui.getCore().byId("Duration").getValue(),10));}
+			                         }),
+								
+								new sap.m.Label({text:"Description"}),
+								new sap.m.Input("Description",{ type: sap.m.InputType.Input}),
+								new sap.m.Label({text:"Final"}),
+								new sap.m.SegmentedButton('tconfFinal', {
+									buttons: [new sap.m.Button('tconfFinalNo',{text: "No"}),
+									          new sap.m.Button('tconfFinalYes',{text: "Yes"})
+									          ], 
+								})
+				                  
+							]
+   					})
+
+              ]
+	 })
+
+	var formChangeStatus = new sap.m.Dialog("dlgChangeStatus",{
+	      title:"Change Status",
+	      modal: true,
+	      contentWidth:"1em",
+	      buttons: [
+ 
+						new sap.m.Button( {
+						    text: "Cancel",
+						    tap: [ function(oEvt) {		  
+								 
+						    	formChangeStatus.close()} ]   
+						})
+						],					
+	      content:[
+	   			new sap.ui.layout.form.SimpleForm({
+	  				
+	  				maxContainerCols : 2,
+	  				content : 	[
+								new sap.m.Label({text:""}),
+								new sap.m.Button('btnStatusAccept', {
+						    		text: 	"Accept",
+						    		icon: 	sap.ui.core.IconPool.getIconURI("accept"),
+						    		type: 	sap.m.ButtonType.Accept,
+						   			tap: 	[ function(oEvt) {		  								 
+						    					changeStatus("Job Accepted")
+						   						formChangeStatus.close()
+						    					} 
+						   			 		]   
+									}
+								),
+								new sap.m.Label({text:""}),
+								new sap.m.Button('btnStatusReject', {
+						    		text: 	"Reject",
+						    		icon: 	sap.ui.core.IconPool.getIconURI("decline"),
+						    		type: 	sap.m.ButtonType.Reject,
+						   			tap: 	[ function(oEvt) {		  								 
+						    					changeStatus("Job Rejected")
+						   						formChangeStatus.close()
+						    					} 
+						   			 		]   
+									}
+								),
+								new sap.m.Label({text:""}),
+								new sap.m.Button('btnStatusSuspend', {
+						    		text: 	"Suspend",
+						    		icon: 	sap.ui.core.IconPool.getIconURI("pause"),
+						    		type: 	sap.m.ButtonType.Default,
+						   			tap: 	[ function(oEvt) {		  								 
+						    					changeStatus("Job Suspended")
+						   						formChangeStatus.close()
+						    					} 
+						   			 		]   
+									}
+								),
+								
+								new sap.m.Label({text:""}),
+								new sap.m.Button('btnStatusOnRoute', {
+						    		text: 	"On Route",
+						    		icon: 	sap.ui.core.IconPool.getIconURI("car-rental"),
+						    		type: 	sap.m.ButtonType.Emphasized,
+						   			tap: 	[ function(oEvt) {		  								 
+						    					changeStatus("On Route")
+						   						formChangeStatus.close()
+						    					} 
+						   			 		]   
+									}
+								),
+								new sap.m.Label({text:""}),
+								new sap.m.Button('btnStatusOnSite', {
+						    		text: 	"On Site",
+						    		icon: 	sap.ui.core.IconPool.getIconURI("building"),
+						    		type: 	sap.m.ButtonType.Emphasized,
+						   			tap: 	[ function(oEvt) {		  								 
+						    					changeStatus("On Site")
+						   						formChangeStatus.close()
+						    					} 
+						   			 		]   
+									}
+								)	
+	              ]
+		 })
+	   		  ]
+	 })
+var firstEntry="none:-1";
+function prepareChangeStatus(){
+	if(currentStatus=="Job Init"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusReject').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusAccept').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusReject').setEnabled(true);
+	}else if(currentStatus=="Job Accepted"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setEnabled(false);
+
+	}else if(currentStatus=="Job Rejected"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setEnabled(false);
+
+	}else if(currentStatus=="On Route"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setVisible(true);
+
+		sap.ui.getCore().getElementById('btnStatusSuspend').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setEnabled(false);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setEnabled(true);
+
+	}else if(currentStatus=="On Site"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setEnabled(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setEnabled(false);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setEnabled(false);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setEnabled(false);
+
+	}else if(currentStatus=="Job Suspended"){
+		sap.ui.getCore().getElementById('btnStatusAccept').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusReject').setVisible(false);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setVisible(true);
+		sap.ui.getCore().getElementById('btnStatusSuspend').setEnabled(false);
+		sap.ui.getCore().getElementById('btnStatusOnRoute').setEnabled(true);
+		sap.ui.getCore().getElementById('btnStatusOnSite').setEnabled(false);
+
+	}
+		
+	
+}
+function changeStatus(Status){
+	var StatusState;
+	var StatusIcon;
+	
+	 if(Status=="Job Init"){
+		 StatusState=sap.ui.core.ValueState.None
+		 StatusIcon="create"
+	 }else if(Status=="Job Accepted"){
+		 StatusState=sap.ui.core.ValueState.Success
+		 StatusIcon="accept"
+	 }else if(Status=="Job Rejected"){
+		 StatusState=sap.ui.core.ValueState.Error
+		 StatusIcon="decline"
+	 }else if(Status=="Job Suspended"){
+		 StatusState=sap.ui.core.ValueState.Warning
+		 StatusIcon="pause"
+	 }else if(Status=="On Route"){
+		 StatusState=sap.ui.core.ValueState.Success
+		 StatusIcon="car-rental"
+	 }else if(Status=="On Site"){
+		 StatusState=sap.ui.core.ValueState.Success
+		 StatusIcon="building"
+	 }
+	currentStatus=Status;
+	 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
+	 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
+			text : Status,
+			icon : sap.ui.core.IconPool.getIconURI(StatusIcon),
+
+			state : StatusState
+	 }))
+}
+
+function buildJobs(){
+var item;	
+var lStatus="";
+var StatusState="";
+var StatusIcon="";
+	SQLStatement="SELECT MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+	SQLStatement+=" From MyOperations "
+	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
+	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
+	SQLStatement+="left join myoperationssplit on myoperations.orderno = myoperationssplit.orderno "
+	SQLStatement+="	and myoperations.opno = myoperationssplit.opno "
+	SQLStatement+="left join myuserstatus on myoperations.orderno = myuserstatus.orderno "
+	SQLStatement+="	and myoperations.opno = myuserstatus.opno "
+		SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
+			SQLStatement+=" where myoperationssplit.assignedto = '"+EmployeeID+"'"
+html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+
+			cnt = 0;
+			while (cnt<rowsArray.length){
+
+				item=rowsArray[cnt];
+				if(cnt==0){
+					firstJob="job:"+item.orderno+':'+item.opno
+				}
+				 if(item.opstat=="Job Init"){
+					 StatusState=sap.ui.core.ValueState.None
+					 StatusIcon="create"
+				 }else if(item.opstat=="Job Accepted"){
+					 StatusState=sap.ui.core.ValueState.Success
+					 StatusIcon="accept"
+				 }else if(item.opstat=="Job Rejected"){
+					 StatusState=sap.ui.core.ValueState.Error
+					 StatusIcon="decline"
+				 }else if(item.opstat=="Job Suspended"){
+					 StatusState=sap.ui.core.ValueState.Warning
+					 StatusIcon="pause"
+				 }else if(item.opstat=="On Route"){
+					 StatusState=sap.ui.core.ValueState.Success
+					 StatusIcon="car-rental"
+				 }else if(item.opstat=="On Site"){
+					 StatusState=sap.ui.core.ValueState.Success
+					 StatusIcon="building"
+				 }else if(item.opstat=="Job Finished"){
+					 StatusState=sap.ui.core.ValueState.Success
+					 StatusIcon="complete"
+				 }
+				standardList.addItem(
+						  new sap.m.ObjectListItem("job:"+item.orderno+':'+item.opno,
+							  {
+						  title:item.operationdesc,
+						  number:item.type, 
+						  numberUnit:item.orderno+'-'+item.opno,
+						
+						  type:sap.m.ListType.Active,
+					
+						  attributes: [
+						                new sap.m.ObjectAttribute( {
+						                    text: 'Start:'+item.startdate
+						                }),
+						                new sap.m.ObjectAttribute( {
+						                	 text: 'End:'+item.enddate
+						                })
+						                ],
+						    firstStatus: [
+						                new sap.m.ObjectStatus( {
+						                    text: item.opstat,
+						                    state:StatusState
+						                })
+						                ]
+					
+							  })
+						  );
+					  cnt++;
+			 }
+			oMasterPage.destroyContent()
+			oMasterPage.addContent(standardList);
+			buildDetailsContent(firstJob)
+		 },
+		 function(error, statement){
+			 alert(error+statement)
+		 }        
+		);	
+cnt = 0;
+
+
+
+
+}
+function buildDetails(){
+	
+		var objectHeader  = new sap.m.ObjectHeader('HEADER',
+{
+			
+	title:"",
+	number:'',
+	numberUnit:'',
+	attributes: [
+	               	                new sap.m.ObjectAttribute('StartDate',{
+	            	                   
+	            	                }),
+	            	                new sap.m.ObjectAttribute('EndDate',{
+	            	                    
+	            	                }),
+	            	                new sap.m.ObjectAttribute('Address',{
+	            	                    
+	            	                }),
+	            	                new sap.m.ObjectAttribute('FuncLoc',{
+	            	                    
+	            	                }),
+	            	                new sap.m.ObjectAttribute('Equipment',{
+	            	                    
+	            	                })
+	               	                ],
+	            	    firstStatus: [
+	            	                new sap.m.ObjectStatus( 'State',{
+	            	                  
+	            	                   
+	            	                })
+	            	                ]
+
+});
+
+
+return objectHeader;
+
+}
+
+
+
+function buildDetailsContent(aid){
+
+var res = aid.split(":")
+var orderno=res[1];
+var opno=res[2];
+var StatusState="";
+var StatusIcon="";
+SQLStatement="SELECT MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+	SQLStatement+=" From MyOperations "
+	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
+	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
+	SQLStatement+="left join myoperationssplit on myoperations.orderno = myoperationssplit.orderno "
+	SQLStatement+="	and myoperations.opno = myoperationssplit.opno "
+	SQLStatement+="left join myuserstatus on myoperations.orderno = myuserstatus.orderno "
+	SQLStatement+="	and myoperations.opno = myuserstatus.opno "
+		SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
+			SQLStatement+=" where myoperations.orderno = '"+orderno+"'"
+			SQLStatement+=" and myoperations.opno = '"+opno+"'"
+
+html5sql.process(SQLStatement,
+	 function(transaction, results, rowsArray){
+
+		 if (rowsArray.length>0){
+			 if(rowsArray[0].opstat=="Job Init"){
+				 StatusState=sap.ui.core.ValueState.None
+				 StatusIcon="create"
+			 }else if(rowsArray[0].opstat=="Job Accepted"){
+				 StatusState=sap.ui.core.ValueState.Success
+				 StatusIcon="accept"
+			 }else if(rowsArray[0].opstat=="Job Rejected"){
+				 StatusState=sap.ui.core.ValueState.Error
+				 StatusIcon="decline"
+			 }else if(rowsArray[0].opstat=="Job Suspended"){
+				 StatusState=sap.ui.core.ValueState.Warning
+				 StatusIcon="pause"
+			 }else if(rowsArray[0].opstat=="On Route"){
+				 StatusState=sap.ui.core.ValueState.Success
+				 StatusIcon="car-rental"
+			 }else if(rowsArray[0].opstat=="On Site"){
+				 StatusState=sap.ui.core.ValueState.Success
+				 StatusIcon="building"
+			 }else if(rowsArray[0].opstat=="Job Finished"){
+				 StatusState=sap.ui.core.ValueState.Success
+				 StatusIcon="complete"
+			 }
+			 
+			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].operationdesc)
+			 sap.ui.getCore().getElementById('HEADER').setNumber(rowsArray[0].orderno)
+			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(rowsArray[0].opno)
+			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
+			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
+					text : rowsArray[0].opstat,
+					icon : sap.ui.core.IconPool.getIconURI(StatusIcon),
+
+					state : StatusState
+			 }))
+			currentStatus=rowsArray[0].opstat;
+			 if(currentStatus=="Job Finished"){
+				
+				 sap.ui.getCore().getElementById('tconfFooterChangeStatus').setEnabled(false)
+				 sap.ui.getCore().getElementById('changeStatus').setEnabled(false)
+			 }else{
+				 
+				 sap.ui.getCore().getElementById('tconfFooterChangeStatus').setEnabled(true)
+				 sap.ui.getCore().getElementById('changeStatus').setEnabled(true)
+			 }
+			  sap.ui.getCore().getElementById('StartDate').setTitle("Start Date")
+			  sap.ui.getCore().getElementById('StartDate').setText(formatDate(rowsArray[0].startdate))
+			  sap.ui.getCore().getElementById('EndDate').setTitle("End Date ")
+			  sap.ui.getCore().getElementById('EndDate').setText(formatDate(rowsArray[0].enddate))
+
+			  sap.ui.getCore().getElementById('Address').setTitle("Address ")	
+			  sap.ui.getCore().getElementById('Address').setText(rowsArray[0].address)	
+			  sap.ui.getCore().getElementById('FuncLoc').setTitle("Funcloc ")	
+			  sap.ui.getCore().getElementById('FuncLoc').setText(rowsArray[0].funcloc)	
+			  sap.ui.getCore().getElementById('Equipment').setTitle("Equipment ")	
+			  sap.ui.getCore().getElementById('Equipment').setText(rowsArray[0].equipment)	
+			  sap.ui.getCore().getElementById('LongText').setText(rowsArray[0].orderlongtext)	
+
+			 
+		 }
+		
+		 buildDetailsTabContent(orderno,opno)
+		 //outputLogToDB();	
+	 },
+	 function(error, statement){
+		 //outputLogToDB(); 
+	 }        
+	);	
+
+ 
+
+
+
+
+if(currentAbsence >-1){
+oDetailPage.setFooter(detailFooter)
+}else{
+oDetailPage.setFooter(null)
+}
+
+
+
+}
+
+function buildDetailsTabs(){
+	var tabBar  = new sap.m.IconTabBar('tabBar',
+			{
+				expanded:'{device>/isNoPhone}',
+
+				select:[function(oEvt) {		  
+					  if(oEvt.getParameters().key=="Status"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Task"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="MPoint"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="TConf"){oDetailPage.setFooter(tconfFooter)}
+					}
+				],
+				
+				items: [
+       	                new sap.m.IconTabFilter( 'STATUS',{
+       	                   key:'Status',
+       	                tooltip: 'User Status',
+       	                 icon: "sap-icon://order-status",
+       	                   content:
+       	                	   [
+       	                	 new sap.ui.layout.form.Form("S1",{
+        	              			
+        	              			editable: true,
+        	              			layout: oLayout1,
+        	              			formContainers: [
+        	              				new sap.ui.layout.form.FormContainer("S1C1",{
+        	              					
+        	              					formElements: [
+        	              						new sap.ui.layout.form.FormElement({
+        	              							
+        	              							fields: [ 
+        	              							         new sap.m.Text({text: "Generic H&S Guide cons"}),
+        	              							         new sap.m.CheckBox({selected: "{checked}"}),  
+
+        	              							         new sap.m.Text({text: "No H&S Guide cons"}),
+        	              							         new sap.m.CheckBox({selected: "{checked}"}) 
+        	              							]
+        	              						}),
+        	              						new sap.ui.layout.form.FormElement({
+        	              							
+        	              							fields: [ 
+        	              							          
+
+        	              							         new sap.m.Text({text: "Site Specific H&S Guide cons"}),
+        	              							         new sap.m.CheckBox({selected: "{checked}"}),  
+
+        	              							         new sap.m.Text({text: "Unable to Complete"}),
+        	              							         new sap.m.CheckBox({selected: "{checked}"}) 
+        	              							]
+        	              						}),       	              						
+        	              						new sap.ui.layout.form.FormElement({
+        	              							
+        	              							fields: [
+        	              			      	      		new sap.m.Text({text: "Unable to Start"}),
+        	              		      	      		new sap.m.CheckBox({selected: "{checked}"}),  
+
+        	              		      	      		new sap.m.Text({text: "Procurement Card"}),
+        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})     
+        	              							]
+        	              						}),
+        	              						new sap.ui.layout.form.FormElement({
+        	              							
+        	              							fields: [
+
+
+        	              		      	      		new sap.m.Text({text: "SAP Purchase Order"}),
+        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})  ,
+
+        	              		      	      		new sap.m.Text({text: "Used from stock"}),
+        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})       
+        	              							]
+        	              						})
+        	              						]
+        	              				})
+        	              				
+        	              			]
+        	              		
+       	                	 })
+
+    	   ]
+       	                	   
+       	                	   
+       	                	   
+       	                	   
+       	                }),
+     	               new sap.m.IconTabFilter( 'OBJECTS',{
+    	                   key:'Assets',
+    	                   tooltip: 'Assets',
+    	                   icon: "sap-icon://machine",
+       	                   content:[
+								new sap.m.Table("AssetsTable",{
+									columns:[
+									         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+									        	 hAlign: 'Left',width: '10%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+									        	 hAlign: 'Left',width: '65%',minScreenWidth : "" , demandPopin: true })       	                         
+							           	     ]
+								})
+								]
+				    }),
+       	                new sap.m.IconTabFilter( 'LONGTEXT',{
+    	                   key:'LongText',
+    	                   tooltip: 'Long Text',
+    	                   icon: "sap-icon://document-text",
+    	                   content:[
+									new sap.m.Text( 'LongText',{})
+    	                            ]
+    	                }),
+       	                
+					    
+       	                new sap.m.IconTabFilter( 'PARTNERS',{
+        	                   key:'Partners',
+        	                   tooltip: 'Partners',
+        	                   icon: "sap-icon://customer-and-contacts",
+           	                   content:[
+    									new sap.m.Table("PartnersTable",{
+    										width:'100%',
+    										columns:[
+    										         
+    										         
+    										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+    										        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+    										        	 hAlign: 'Left',width: '10%',minScreenWidth : "" , demandPopin: true}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+    										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true }),     	                         
+    										         new sap.m.Column({header: new sap.m.Label({text:"TelNo"}),
+    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
+    										        	 ]
+    									})
+    									]          	                
+        	                }),
+           	                new sap.m.IconTabFilter( 'TCONF',{
+         	                   key:'TConf',
+         	                  tooltip: 'Time Confirmations',
+         	                  icon: "sap-icon://time-entry-request",
+            	                   content:[
+     									new sap.m.Table("TConfsTable",{
+     										width:'100%',
+     										columns:[
+     										         
+     										         
+     										         new sap.m.Column({header: new sap.m.Label({text:"No"}),
+     										        	 hAlign: 'Left',width:'12%', minScreenWidth : "" , demandPopin: false}),
+         										     new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+         										         hAlign: 'Left',width:'7%', minScreenWidth : "" , demandPopin: false}),
+             										 new sap.m.Column({header: new sap.m.Label({text:"Start"}),
+     										        	 hAlign: 'Left',width:'15%', minScreenWidth : "" , demandPopin: false}),
+             										 new sap.m.Column({header: new sap.m.Label({text:"End"}),
+     										        	 hAlign: 'Left',width:'15%', minScreenWidth : "small" , demandPopin: true}),
+             										 new sap.m.Column({header: new sap.m.Label({text:"Duration"}),
+     										        	 hAlign: 'Left',width:'10%', minScreenWidth : "small" , demandPopin: true}),
+	         										 new sap.m.Column({header: new sap.m.Label({text:"Final"}),
+	 										        	 hAlign: 'Left',width:'5%', minScreenWidth : "small" , demandPopin: true}),
+	 										         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+	 										        	 hAlign: 'Left',width:'36%', minScreenWidth : "small" , demandPopin: true}),                    
+								           	     ]
+     									})
+     									]          	                
+         	                }),				            	                
+       	                ]
+
+
+			});
+	
+	return tabBar;
+
+	}
+
+
+function buildDetailsTabContent(orderNo,OpNo){
+
+
+//Create Status Details
+
+
+
+//Assets
+html5sql.process("SELECT * FROM MyAssets where orderno = '"+orderNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('AssetsTable');
+			sap.ui.getCore().getElementById('AssetsTable').removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].id}),
+			            new sap.m.Text({text: rowsArray[n].type}),
+						new sap.m.Text({text: rowsArray[n].name})   
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+//Mpoints
+html5sql.process("SELECT * FROM MyPartners where orderno = '"+orderNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('PartnersTable');
+			sap.ui.getCore().getElementById('PartnersTable').removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].id}),
+			            new sap.m.Text({text: rowsArray[n].type}),
+						new sap.m.Text({text: rowsArray[n].name}),
+			            new sap.m.Text({text: rowsArray[n].telno})   
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+
+ //Time Confirmations
+html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and opno = '"+OpNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('TConfsTable');
+			sap.ui.getCore().getElementById('TConfsTable').removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].confno}),
+			            new sap.m.Text({text: rowsArray[n].type}),
+						new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
+			            new sap.m.Text({text: rowsArray[n].enddate+" "+rowsArray[n].endtime}),
+						new sap.m.Text({text: rowsArray[n].duration}),
+			            new sap.m.Text({text: rowsArray[n].final}),
+			           
+						new sap.m.Text({text:  rowsArray[n].description})   
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+
+}
+
+function deleteAbsence()
+{
+
+deleteDBAbsence(currentAbsence)
+
+}
+	var oDetailPage = new sap.m.Page(
+			"detail",
+			{
+				title : "Job Details",
+				content : [buildDetails(firstJob),buildDetailsTabs()],
+				showNavButton: true,
+					 
+					 navButtonPress: function() {				                  
+						window.location.reload()
+					 }
+			}).addStyleClass("sapUiStdPage");
+
+
+	//create first master page
+
+	var oMasterPage = new sap.m.Page(
+			"master",
+			{
+				 headerContent : new sap.m.Button({
+                     icon: "sap-icon://home",
+                     press : function() {
+                    	 window.location.href="home.html"
+                     }
+}),
+				title : "Jobs",
+				
+				content : [ buildJobs()],
+				showNavButton: "{device>/isPhone}" ,
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer',
+
+							contentLeft : [
+									new sap.m.Button("Add1", {
+					   					 text: "create",
+					  					 press: [ function(){
+					  						sap.ui.getCore().byId("dlgJob").open(); 
+					  						
+					  							}]
+										 })
+								]
+						})			 
+
+			});
+	
+	
+	
+	
+	//create SplitApp()
+	var oSplitApp = new sap.m.SplitApp({
+		detailPages: [oDetailPage],
+		masterPages: [oMasterPage],
+		initialDetail: "detail",
+		initialMaster: "master",
+		afterMasterOpen: function(){
+			jQuery.sap.log.info("master is opened");
+		},
+		afterMasterClose: function(){
+			jQuery.sap.log.info("master is closed");
+		}
+	});
+
+	if(jQuery.device.is.tablet || jQuery.device.is.desktop){
+		oSplitApp.setDefaultTransitionNameDetail("fade");	
+	}
+
+	oSplitApp.placeAt("body");
+</script>
+</head>
+<body id="body" class="sapUiBody">
+</body>
+</html>

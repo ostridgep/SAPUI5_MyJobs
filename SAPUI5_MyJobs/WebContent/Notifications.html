@@ -1,0 +1,698 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - Notifications</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+
+<script src="myresources/js/buildDetails.js"></script>
+<script src="myresources/js/html5sql.js"></script>  
+<script src="myresources/js/bgsync.js"></script>
+<script src="myresources/js/MyJobsDB.js"></script>
+<script src="myresources/js/MyJobsUtils.js"></script>
+<script type="text/javascript">
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+var currentStatus;
+var firstNotification="";
+var EmployeeID = localStorage.getItem("EmployeeID")
+var detailFooter = new sap.m.Bar({
+		id: 'detailFooter',
+		contentRight : [
+						
+						]
+		
+	})
+
+var standardList  = new sap.m.List(
+		  {
+			  //items:standardListItem,
+			  itemPress:[function(oEvt) {		  
+				  buildDetailsContent(oEvt.getParameter("listItem").getId());
+				 
+				  oSplitApp.to("detail")}],
+			  mode:sap.m.ListMode.SingleSelectMaster
+		  });
+	function handleChange(oEvent) {
+		var oDRS = oEvent.oSource;
+		var sFrom = oEvent.getParameter("from");
+		var sTo = oEvent.getParameter("to");
+		var bValid = oEvent.getParameter("valid");
+
+		
+
+		var oText = sap.ui.getCore().byId("TextEvent");
+		//oText.setText("Event " + iEvent + "\nId: " + oEvent.oSource.getId() + "\nFrom: " + sFrom + "\nTo: " + sTo + "\nvalid: " + bValid);
+		if (bValid) {
+			oDRS.setValueState(sap.ui.core.ValueState.None);
+		} else {
+			oDRS.setValueState(sap.ui.core.ValueState.Error);
+		}
+		
+		startDate=sFrom.getFullYear().toString()+zeroFill(sFrom.getMonth()+1)+zeroFill(sFrom.getDate())
+		endDate=sTo.getFullYear().toString()+zeroFill(sTo.getMonth()+1)+zeroFill(sTo.getDate())
+		
+	};
+	
+var firstEntry="none:-1";
+
+var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
+    title:"Create Notification",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+							/* createTimeConf(AbsenceType,startDate,endDate,
+									sap.ui.getCore().byId("Days").getValue(),
+									sap.ui.getCore().byId("Description").getValue(),
+									sap.ui.getCore().byId("Comments").getValue());  */
+									formNewNotif.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formNewNotif.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+								
+								
+								new sap.m.Label({text:"Coding"}),
+								new sap.m.Select('NewType',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "1",
+											text: "M1 Notification"
+										}),
+
+										new sap.ui.core.Item({
+											key: "2",
+											text: "M2 Notification"
+										}),
+
+										new sap.ui.core.Item({
+											key: "3",
+											text: "M3 - Notification"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Select('NewSource',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "1",
+											text: "General"
+										}),
+
+										new sap.ui.core.Item({
+											key: "2",
+											text: "Hardware"
+										}),
+
+										new sap.ui.core.Item({
+											key: "3",
+											text: "Software"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Select('Code',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "1",
+											text: "Code 1"
+										}),
+
+										new sap.ui.core.Item({
+											key: "2",
+											text: "Code 2"
+										}),
+
+										new sap.ui.core.Item({
+											key: "3",
+											text: "Code 3"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								
+								new sap.m.Label({text:"Priority"}),
+								new sap.m.Select('NewPriority',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "1",
+											text: "Red"
+										}),
+
+										new sap.ui.core.Item({
+											key: "2",
+											text: "Amber"
+										}),
+
+										new sap.ui.core.Item({
+											key: "3",
+											text: "Green"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Label({text: "Start Date/Time:"}),
+								
+								new sap.m.DateTimeInput('NewNotifStart',{
+									width : "99%",
+									type : "DateTime",
+									displayFormat : "yyyy/MM/dd hh:mm",
+									dateValue : new Date()
+								}),
+								new sap.m.Label({text:"Description"}),
+								new sap.m.Input("NewDescription",{ type: sap.m.InputType.Input}),
+								
+								new sap.m.Label({text:"Details"}),
+								new sap.m.TextArea("NewDetails",{ rows: 3}),
+
+			new sap.m.Label({text:"Functional Location"}),
+			new sap.m.Input("NewFuncLoc",{ type: sap.m.InputType.Input}),
+			
+			new sap.m.Label({text:"Equipment"}),
+			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input}),								
+				                  
+							]
+ 					})
+
+            ]
+	 })
+function buildNotifications(){
+var item;	
+var lStatus="";
+var StatusState="";
+var StatusIcon="";
+	SQLStatement="SELECT * from MyNotifications"
+html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+
+			cnt = 0;
+			while (cnt<rowsArray.length){
+
+				item=rowsArray[cnt];
+				if(cnt==0){
+					firstNotification="notif:"+item.notifno
+				}
+				 
+				standardList.addItem(
+						  new sap.m.ObjectListItem("notif:"+item.notifno,
+							  {
+						  title:item.shorttext,
+						  number:item.type, 
+						  numberUnit:item.notifno,
+						
+						  type:sap.m.ListType.Active,
+					
+						  attributes: [
+						                new sap.m.ObjectAttribute( {
+						                    text: 'Start:'+item.startdate
+						                })
+						                ],
+						    firstStatus: [
+						                new sap.m.ObjectStatus( {
+						                    text: item.priority,
+						                    state:"Success"
+						                })
+						                ]
+					
+							  })
+						  );
+					  cnt++;
+			 }
+			oMasterPage.destroyContent()
+			oMasterPage.addContent(standardList);
+			buildDetailsContent(firstNotification)
+		 },
+		 function(error, statement){
+			 alert(error+statement)
+		 }        
+		);	
+cnt = 0;
+
+
+
+
+}
+function buildDetails(){
+	
+		var objectHeader  = new sap.m.ObjectHeader('HEADER',
+{
+			
+	title:"",
+	number:'',
+	numberUnit:'',
+	attributes: [
+	               	                new sap.m.ObjectAttribute('StartDate',{
+	            	                   
+	            	                }),
+
+	            	                new sap.m.ObjectAttribute('ReportedOn',{
+	            	                    
+	            	                }),
+	            	                new sap.m.ObjectAttribute('FuncLoc',{
+	            	                    
+	            	                }),
+	            	                new sap.m.ObjectAttribute('Equipment',{
+	            	                    
+	            	                }),
+	               	             ,
+	            	                new sap.m.ObjectAttribute('Order',{
+	            	                    
+	            	                })
+	               	                ],
+	            	    firstStatus: [
+	            	                new sap.m.ObjectStatus( 'State',{
+	            	                  
+	            	                   
+	            	                })
+	            	                ]
+
+});
+
+
+return objectHeader;
+
+}
+
+
+
+function buildDetailsContent(aid){
+
+var res = aid.split(":")
+var notifno=res[1];
+
+var StatusState="";
+var StatusIcon="";
+SQLStatement="SELECT * from MyNotifications where notifno = '"+notifno+"'"
+
+html5sql.process(SQLStatement,
+	 function(transaction, results, rowsArray){
+
+		 if (rowsArray.length>0){
+			 
+			 
+			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].shorttext)
+			 sap.ui.getCore().getElementById('HEADER').setNumber(rowsArray[0].notifno)
+			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(rowsArray[0].type)
+			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
+			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
+					text : rowsArray[0].priority,
+					
+
+					state : "Success"
+			 }))
+			
+			  sap.ui.getCore().getElementById('StartDate').setTitle("Start Date")
+			  sap.ui.getCore().getElementById('StartDate').setText(rowsArray[0].startdate)
+			  sap.ui.getCore().getElementById('ReportedOn').setTitle("Reported On ")
+			  sap.ui.getCore().getElementById('ReportedOn').setText(rowsArray[0].enddate)
+
+			  sap.ui.getCore().getElementById('Order').setTitle("Order ")	
+			  sap.ui.getCore().getElementById('Order').setText(rowsArray[0].orderno)	
+			  sap.ui.getCore().getElementById('FuncLoc').setTitle("Funcloc ")	
+			  sap.ui.getCore().getElementById('FuncLoc').setText(rowsArray[0].funcloc)	
+			  sap.ui.getCore().getElementById('Equipment').setTitle("Equipment ")	
+			  sap.ui.getCore().getElementById('Equipment').setText(rowsArray[0].equipment)	
+			  sap.ui.getCore().getElementById('LongText').setText(rowsArray[0].longtext)	
+
+			 
+		 }
+		
+		 buildDetailsTabContent(notifno)
+		 //outputLogToDB();	
+	 },
+	 function(error, statement){
+		 //outputLogToDB(); 
+	 }        
+	);	
+
+ 
+
+
+
+
+
+
+
+
+}
+
+function buildDetailsTabs(){
+	var tabBar  = new sap.m.IconTabBar('tabBar',
+			{
+				expanded:'{device>/isNoPhone}',
+
+				select:[function(oEvt) {		  
+					  if(oEvt.getParameters().key=="Activities"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Items"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Causes"){oDetailPage.setFooter(detailFooter)}
+					 
+					}
+				],
+				
+				items: [
+						new sap.m.IconTabFilter( 'LONGTEXT',{
+						    key:'LongText',
+						    tooltip: 'Long Text',
+						    icon: "sap-icon://document-text",
+						    content:[
+										new sap.m.Text( 'LongText',{})
+						             ]
+						 }),
+       
+     	               new sap.m.IconTabFilter( 'ACTIVITIES',{
+    	                   key:'Activities',
+    	                   tooltip: 'Activities',
+    	                   icon: "sap-icon://activities",
+       	                   content:[
+								new sap.m.Table("ActivitiesTable",{
+									columns:[
+									         new sap.m.Column({header: new sap.m.Label({text:"Task"}),
+									        	 hAlign: 'Left',width: '8%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+									        	 hAlign: 'Left',width: '8%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+									        	 hAlign: 'Left',width: '8%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Group"}),
+									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Code"}),
+									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Text"}),
+									        	 hAlign: 'Left',width: '46%',minScreenWidth : "" , demandPopin: true })       	                         
+							           	     ]
+								})
+								]
+				    }),
+       	                
+       	                
+					    
+       	                new sap.m.IconTabFilter( 'ITEMS',{
+        	                   key:'Items',
+        	                   tooltip: 'Items',
+        	                   icon: "sap-icon://activity-items",
+           	                   content:[
+    									new sap.m.Table("ItemsTable",{
+    										width:'100%',
+    										columns:[
+    										         
+    										         
+    										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+    										        	 hAlign: 'Left',width: '10%', minScreenWidth : "" , demandPopin: false}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Group"}),
+    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Code"}),
+    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),     	                         
+    										         new sap.m.Column({header: new sap.m.Label({text:"Object"}),
+    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
+    										        	 new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+        										        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true }),  
+    										        	 ]
+    									})
+    									]          	                
+        	                }),
+           	                new sap.m.IconTabFilter( 'CAUSES',{
+         	                   key:'Causes',
+         	                  tooltip: 'Causes',
+         	                  icon: "sap-icon://cause",
+            	                   content:[
+     									new sap.m.Table("CausesTable",{
+     										width:'100%',
+     										columns:[
+     										         
+     										         
+    										         new sap.m.Column({header: new sap.m.Label({text:"Item Id"}),
+    										        	 hAlign: 'Left',width: '10%', minScreenWidth : "" , demandPopin: false}),
+    										        	 new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+        										        	 hAlign: 'Left',width: '5%', minScreenWidth : "" , demandPopin: false}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Group"}),
+    										        	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: true}),
+    										         new sap.m.Column({header: new sap.m.Label({text:"Code"}),
+    										        	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: true }),     	                          
+    										        	 new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+        										        	 hAlign: 'Left',width: '35%',minScreenWidth : "" , demandPopin: true }),                   
+								           	     ]
+     									})
+     									]          	                
+         	                }),			
+           	                new sap.m.IconTabFilter( 'EFFECTS',{
+          	                   key:'Effects',
+          	                  tooltip: 'Effects',
+          	                  icon: "sap-icon://list",
+             	                   content:[
+      									new sap.m.Table("TConfsTable",{
+      										width:'100%',
+      										columns:[
+      										         
+      										         
+      										         new sap.m.Column({header: new sap.m.Label({text:"Item Id"}),
+      										        	 hAlign: 'Left',width:'10%', minScreenWidth : "" , demandPopin: false}),
+          										     new sap.m.Column({header: new sap.m.Label({text:"id"}),
+          										         hAlign: 'Left',width:'5%', minScreenWidth : "" , demandPopin: false}),
+              										 new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+      										        	 hAlign: 'Left',width:'10%', minScreenWidth : "" , demandPopin: false}),
+              										 new sap.m.Column({header: new sap.m.Label({text:"Group"}),
+      										        	 hAlign: 'Left',width:'20%', minScreenWidth : "" , demandPopin: true}),
+              										 new sap.m.Column({header: new sap.m.Label({text:"Code"}),
+      										        	 hAlign: 'Left',width:'20%', minScreenWidth : "" , demandPopin: true}),
+ 	 										         new sap.m.Column({header: new sap.m.Label({text:"Value"}),
+ 	 										        	 hAlign: 'Left',width:'35%', minScreenWidth : "small" , demandPopin: true}),                    
+ 								           	     ]
+      									})
+      									]          	                
+          	                }),        	                
+       	                ]
+
+
+			})
+	
+	return tabBar;
+
+	}
+
+
+function buildDetailsTabContent(notifNo){
+
+
+html5sql.process("SELECT * FROM MyActivities where notifno = '"+notifNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('ActivitiesTable');
+			opTable.removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].task_id}),
+			            new sap.m.Text({text: rowsArray[n].item_id}),
+						new sap.m.Text({text: rowsArray[n].act_cat_typ}),			    
+						new sap.m.Text({text: rowsArray[n].txt_actgrp}),
+			            new sap.m.Text({text: rowsArray[n].txt_actcd}),
+						new sap.m.Text({text: rowsArray[n].act_text})   
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+//Mpoints
+html5sql.process("SELECT * FROM MyItems where notifno = '"+notifNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('ItemsTable');
+			opTable.removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].item_id}),
+			            new sap.m.Text({text: rowsArray[n].stxt_grpcd}),
+						new sap.m.Text({text: rowsArray[n].txt_grpcd}),
+						new sap.m.Text({text: rowsArray[n].txt_objptcd}),
+			            new sap.m.Text({text: rowsArray[n].descript})   
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+
+ //Time Confirmations
+html5sql.process("SELECT * FROM MyCauses where notifno = '"+notifNo+"' ;",
+		 function(transaction, results, rowsArray){
+
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('CausesTable');
+			opTable.removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].item_id}),
+			            new sap.m.Text({text: rowsArray[n].cause_id}),
+						new sap.m.Text({text: rowsArray[n].txt_causegrp}),
+						new sap.m.Text({text: rowsArray[n].txt_causecd}),
+			            new sap.m.Text({text: rowsArray[n].cause_text})  
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+html5sql.process("SELECT * FROM MyEffects where notifno = '"+notifNo+"' ;",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('EffectsTable');
+			opTable.removeAllItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].item_id}),
+			            new sap.m.Text({text: rowsArray[n].task_id}),
+						new sap.m.Text({text: rowsArray[n].txt_effectgrp}),
+						new sap.m.Text({text: rowsArray[n].txt_effectcd}),
+			            new sap.m.Text({text: rowsArray[n].value})  
+				 		]
+					}));
+				n++;
+			 }
+
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+}
+
+function deleteAbsence()
+{
+
+deleteDBAbsence(currentAbsence)
+
+}
+	var oDetailPage = new sap.m.Page(
+			"detail",
+			{
+				title : "Notiofication Details",
+				content : [buildDetails(firstNotification),buildDetailsTabs()],
+				showNavButton: true,
+					 
+					 navButtonPress: function() {				                  
+						window.location.reload()
+					 }
+			}).addStyleClass("sapUiStdPage");
+
+
+	//create first master page
+
+	var oMasterPage = new sap.m.Page(
+			"master",
+			{
+				 headerContent : new sap.m.Button({
+                     icon: "sap-icon://home",
+                     press : function() {
+                    	 window.location.href="home.html"
+                     }
+}),
+				title : "Notifications",
+				
+				content : [ buildNotifications()],
+				showNavButton: "{device>/isPhone}" ,
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer',
+
+							contentLeft : [
+									new sap.m.Button("Add1", {
+					   					 text: "create",
+					  					 press: [ function(){
+					  						formNewNotif.open(); 
+					  						
+					  							}]
+										 })
+								]
+						})			 
+
+			});
+	
+	
+	
+	
+	//create SplitApp()
+	var oSplitApp = new sap.m.SplitApp({
+		detailPages: [oDetailPage],
+		masterPages: [oMasterPage],
+		initialDetail: "detail",
+		initialMaster: "master",
+		afterMasterOpen: function(){
+			jQuery.sap.log.info("master is opened");
+		},
+		afterMasterClose: function(){
+			jQuery.sap.log.info("master is closed");
+		}
+	});
+
+	if(jQuery.device.is.tablet || jQuery.device.is.desktop){
+		oSplitApp.setDefaultTransitionNameDetail("fade");	
+	}
+
+	oSplitApp.placeAt("body");
+</script>
+</head>
+<body id="body" class="sapUiBody">
+</body>
+</html>
