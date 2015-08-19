@@ -6,7 +6,7 @@
         id        = "com.pjo.sapui5myjobs"
         version   = "1.150819.1700">
 
-    <name>MyAbsence</name>
+    <name>SAPUI5 MyJobs</name>
     <description>
         UI5 MyJobs.
     </description>
