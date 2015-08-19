@@ -214,6 +214,26 @@ var formLastSync = new sap.m.Dialog("dlgLastSync",{
 	sap.ui.getCore().getElementById('synchroniseUpload').setSelected(false)
 	
 }
+function forceTheSync()
+{
+
+if(sap.ui.getCore().getElementById('synchroniseReference').setSelected()){
+
+	SetConfigParam('LASTSYNC_REFERENCE', "20120101010101");
+	syncTransactional()
+
+};
+if(sap.ui.getCore().getElementById('synchroniseTransactional').setSelected()){
+	SetConfigParam('LASTSYNC_TRANSACTIONAL', "20120101010101");
+	syncReference()
+
+	};
+	if(sap.ui.getCore().getElementById('synchroniseUpload').setSelected()){
+	SetConfigParam('LASTSYNC_UPLOAD', "20120101010101");
+	syncUpload()
+	};
+
+}
 var formSynchronise = new sap.m.Dialog("dlgSynchronise",{
     title:"Synchronise",
     modal: true,
@@ -223,7 +243,9 @@ var formSynchronise = new sap.m.Dialog("dlgSynchronise",{
 				    text: "Synchronise",
 				    type: 	sap.m.ButtonType.Accept,
 				    tap: [ function(oEvt) {		  
-						 
+				    	 
+				    	forceTheSync();
+ 
 				    	formSynchronise.close()
 						  } ]
 				}),
@@ -459,17 +481,8 @@ var page  = new sap.m.Page('homePage',{
 				       						}]
 				       			 })
 					],
-			contentMiddle: [dispLog],
+			contentMiddle: [],
 			contentLeft : [
-
-				       		new sap.m.Button("Synchronize", {
-				       			 
-				       			 icon:"sap-icon://synchronize",
-				       				 press: [ function(){
-				       					syncTheData();
-				       				
-				       						}]
-				       			 })
 					]
 			}),
     content: tileContainer,enableScrolling:false,showNavButton: "{device>/isPhone}" });
