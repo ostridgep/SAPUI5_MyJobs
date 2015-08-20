@@ -1,0 +1,156 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - Route</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script src="myresources/js/jquery-gmaps-latlon-picker.js"></script>
+<script src="myresources/js/maplace-0.1.3.js"></script>
+<script src="myresources/js/html5sql.js"></script>  
+<script src="myresources/js/bqsync.js"></script>
+<script src="myresources/js/MyJobsDB.js"></script>
+<script src="myresources/js/MyJobsUtils.js"></script>
+  
+<style type='text/css'>
+ .block {
+    border: 1px solid grey;
+    width: 95%;
+
+    display: inline-block;
+    margin: 1em 1em 1em 1em;
+	border-radius: 15px;
+    left:50px
+}
+  .highlight {
+
+     box-shadow: 5px 5px 5px #888888;
+
+  }
+
+
+  </style>
+
+<script type="text/javascript">
+var PostCode=getURLParameters("PostCode");
+var Job=getURLParameters("Job");
+jQuery.sap.require("sap.m.MessageBox");
+var SLat=getURLParameters("SLat");
+var SLon=getURLParameters("SLon");
+var ELat=getURLParameters("ELat");
+var ELon=getURLParameters("ELon");
+var Locs = [
+    {
+        lat: 45.4654,
+        lon: 9.1866,
+        title: 'Start',
+        html: '<h3>Start</h3>'
+    },
+    {
+		lat: 45.4654,
+        lon: 9.1866,
+		title: 'Finish',
+        html: '<h3>Finish</h3>'
+    }
+];
+function showMap(){
+	window.location.href='Map.htmL?PostCode='+PostCode+'&Job='+Job
+}
+function changeStartAddress() {
+	   
+    var geocoder = new google.maps.Geocoder();
+
+    geocoder.geocode( { 'address': $('#StartLocation').val()+" , UK"}, function(results, status) {
+      if (status == google.maps.GeocoderStatus.OK) {
+			window.location.href='Route.htmL?PostCode='+PostCode+'&Job='+Job+'&SLat='+results[0].geometry.location.lat()+'&SLon='+results[0].geometry.location.lng()+'&ELat='+ELat+'&ELon='+ELon
+      } 
+    });
+
+
+  }
+
+
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+
+
+
+var page  = new sap.m.Page('displayRoute',{
+	title:"Display Route",  
+
+
+	headerContent: new sap.m.Button({
+		
+		icon: "sap-icon://nav-back",
+		press : function(){ window.location.href="Jobs.html?Job="+Job}
+		
+	}),
+	footer:
+	    new sap.m.Bar (
+			{
+
+				contentLeft : [
+
+				       		
+					],
+					contentMiddle: [new sap.m.Button({
+		       			 
+		       			 icon:"sap-icon://map",
+		       				 press: [ function(){
+		       					
+		       					 showMap()
+		       						}]
+		       			 }),] 	,
+			contentRight : [
+
+				       	
+					]
+		
+	}),
+
+    content: 	
+    	[
+		sap.ui.core.HTML({
+			content: "<TABLE><TR><TD>Current Start Location:&nbsp;</tD><TD><input id='StartLocation' type='text' ></TD><TD><input onclick='changeStartAddress()' id='SearchButton' type='button'  value='Change'></TD></TR></TABLE>"+
+			"<div  align='center'> <div id='gmap-route'></div><div id='route'></div><div id='controls'></div></div>"
+		})
+		],
+    enableScrolling:true,showNavButton: "{device>/isPhone}" });
+
+var app = new sap.m.App();
+
+app.setInitialPage(page.getId());	
+	
+
+
+page.placeAt("body");
+$(function() {
+	Locs[0]['lat']=SLat
+	Locs[0]['lon']=SLon
+	Locs[1]['lat']=ELat
+	Locs[1]['lon']=ELon
+	new Maplace({
+	    locations: Locs,
+	    map_div: '#gmap-route',
+	    generate_controls: false,
+	    show_markers: false,
+	    type: 'directions',
+	    draggable: true,
+	    directions_panel: '#route',
+	    afterRoute: function(distance) {
+	        $('#km').text(': '+(distance/1000)+'km');
+			}
+		}).Load();
+	});
+</script>
+</head>
+<body id="body" class="sapUiBody">
+
+
+<script></script>
+</body>
+<script></script>
+</html>

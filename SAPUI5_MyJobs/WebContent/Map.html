@@ -1,0 +1,149 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - Map</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script src="myresources/js/jquery-gmaps-latlon-picker.js"></script>
+<script src="myresources/js/html5sql.js"></script>  
+<script src="myresources/js/bqsync.js"></script>
+<script src="myresources/js/MyJobsDB.js"></script>
+<script src="myresources/js/MyJobsUtils.js"></script>
+  
+<style type='text/css'>
+ .block {
+    border: 1px solid grey;
+    width: 95%;
+
+    display: inline-block;
+    margin: 1em 1em 1em 1em;
+	border-radius: 15px;
+    left:50px
+}
+  .highlight {
+
+     box-shadow: 5px 5px 5px #888888;
+
+  }
+  .gllpLatlonPicker	{ margin: 20px 0; }
+.gllpMap	{  width: 500px; height:500px; }
+
+  </style>
+
+<script type="text/javascript">
+var PostCode=getURLParameters("PostCode");
+var Job=getURLParameters("Job");
+jQuery.sap.require("sap.m.MessageBox");
+function showRoute()
+{
+navigator.geolocation.getCurrentPosition(getDestinationDetails);
+}
+function getDestinationDetails(currentLatLon)
+{
+
+	Start_lat=currentLatLon.coords.latitude;
+	Start_lon=currentLatLon.coords.longitude;
+	End_lat = $('#xLat').val()
+	End_lon = $('#xLong').val()
+
+	window.location.href='Route.htmL?PostCode='+PostCode+'&Job='+Job+'&SLat='+Start_lat+'&SLon='+Start_lon+'&ELat='+End_lat+'&ELon='+End_lon
+    
+    
+}
+
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+
+
+
+var page  = new sap.m.Page('displayMap',{
+	title:"Display Map",  
+
+
+	headerContent: new sap.m.Button({
+		
+		icon: "sap-icon://nav-back",
+		press : function(){ window.location.href="Jobs.html?Job="+Job}
+		
+	}),
+	footer:
+	    new sap.m.Bar (
+			{
+
+				contentLeft : [
+
+				       		
+					],
+					contentMiddle: [new sap.m.Button({
+		       			 
+		       			 icon:"sap-icon://map-3",
+		       			 text:"Route",
+		       				 press: [ function(){
+		       					
+		       					 showRoute()
+		       						}]
+		       			 }),] 	,
+			contentRight : [
+
+				       	
+					]
+		
+	}),
+
+    content: 	
+    	[
+		sap.ui.core.HTML({
+			content: "		<div  align='center'>"+ 
+			"<fieldset class='gllpLatlonPicker'>"+ 
+			"<div style='display:none'>	"+ 
+			
+				"<TABLE>"+ 
+				"	<TR><TD><input  id='SearchText' type='text' class='gllpSearchField'></TD><TD><input id='SearchButton' "+ 
+					"type='button' class='gllpSearchButton' value='Search'></TD></TR>"+ 
+				
+				"</TABLE>"+ 
+			"</div>"+ 
+			"<div class='gllpMap'>Google Maps</div>"+ 
+			"<div style='display:none'>	"+ 
+			"<TABLE>"+ 
+			"	<TR><TD>Lat:</TD><TD><input id='xLat' type='text' disabled class='gllpLatitude' value='20'/></TD></TR>"+ 
+			"	<TR><TD>Lon:</TD><TD><input id='xLong' type='text' disabled class='gllpLongitude' value='20'/></TD></TR>"+ 
+			"			<input type='hidden' class='gllpZoom' value='3'/>"+ 
+			
+			"</table>"+ 
+			"</div>"+ 
+		"	<br/>"+ 
+		"</fieldset>"+ 
+		
+		
+	"</div>"
+		})
+		],
+    enableScrolling:true,showNavButton: "{device>/isPhone}" });
+
+var app = new sap.m.App();
+
+app.setInitialPage(page.getId());	
+	
+
+
+page.placeAt("body");
+$(function() {
+	//	jQuery("#content").html("Hello World - UI5 is ready");
+	document.getElementById("SearchText").value = PostCode+" , UK";
+	$("#SearchButton").click();
+	
+	});
+</script>
+</head>
+<body id="body" class="sapUiBody">
+
+
+<script></script>
+</body>
+<script></script>
+</html>

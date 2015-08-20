@@ -18,20 +18,31 @@
 <script type="text/javascript">
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
 var currentStatus;
+var currentPostcode;
+var currentJob;
 var firstJob="";
 var EmployeeID = localStorage.getItem("EmployeeID")
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
-		contentRight : [
-						new sap.m.Button("changeStatus", {
-							 text: "Status",
-							 icon: "edit",
+		contentLeft : [
+						new sap.m.Button("showMap", {
+							 text: "Map",
+							 icon:"sap-icon://map",
 							 press: [ function(){
-								 prepareChangeStatus();
-								 formChangeStatus.open();
+								 window.location.href="Map.html?PostCode="+currentPostcode+"&Job="+currentJob;
 									}]
 						 })
-						]
+						],
+						contentRight : [
+										new sap.m.Button("changeStatus", {
+											 text: "Status",
+											 icon:"sap-icon://edit",
+											 press: [ function(){
+												 prepareChangeStatus();
+												 formChangeStatus.open();
+													}]
+										 })
+										]
 		
 	})
 var tconfFooter = new sap.m.Bar({
@@ -378,7 +389,7 @@ var item;
 var lStatus="";
 var StatusState="";
 var StatusIcon="";
-	SQLStatement="SELECT MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+	SQLStatement="SELECT MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
 	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
@@ -420,6 +431,8 @@ html5sql.process(SQLStatement,
 					 StatusState=sap.ui.core.ValueState.Success
 					 StatusIcon="complete"
 				 }
+				 currentPostcode=item.postcode;
+				 currentJob=item.orderno+'-'+item.opno;
 				standardList.addItem(
 						  new sap.m.ObjectListItem("job:"+item.orderno+':'+item.opno,
 							  {
