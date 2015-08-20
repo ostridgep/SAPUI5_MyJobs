@@ -22,6 +22,8 @@ var currentPostcode;
 var currentJob;
 var firstJob="";
 var EmployeeID = localStorage.getItem("EmployeeID")
+var MapJob=getURLParameters("MapJob");
+
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
 		contentLeft : [
@@ -69,14 +71,30 @@ var tconfFooter = new sap.m.Bar({
 					]
 	
 })
-var standardList  = new sap.m.List(
+var firstItem=""
+var standardList  = new sap.m.List("JobList",
 		  {
 			  //items:standardListItem,
 			  itemPress:[function(oEvt) {		  
 				  buildDetailsContent(oEvt.getParameter("listItem").getId());
-				 
+				  localStorage.setItem("SelectedItem",oEvt.getParameter("listItem"))
 				  oSplitApp.to("detail")}],
-			  mode:sap.m.ListMode.SingleSelectMaster
+			  mode:sap.m.ListMode.SingleSelectMaster,
+			  updateFinished : function(oEvent){   
+		          firstItem = sap.ui.getCore().byId("JobList").getItems()[0];   
+		             
+		          MapJob1=MapJob+":"
+				  res=MapJob1.split(":")
+					
+					if(res[0]=="job")
+						{	
+						
+						sap.ui.getCore().byId("JobList").setSelectedItem(localStorage.getItem("SelectedItem"),true);			
+						}else{
+						sap.ui.getCore().byId("JobList").setSelectedItem(firstItem,true);
+						}
+		      
+		          }  
 		  });
 	function handleChange(oEvent) {
 		var oDRS = oEvent.oSource;
@@ -431,8 +449,7 @@ html5sql.process(SQLStatement,
 					 StatusState=sap.ui.core.ValueState.Success
 					 StatusIcon="complete"
 				 }
-				 currentPostcode=item.postcode;
-				 currentJob=item.orderno+'-'+item.opno;
+
 				standardList.addItem(
 						  new sap.m.ObjectListItem("job:"+item.orderno+':'+item.opno,
 							  {
@@ -463,7 +480,8 @@ html5sql.process(SQLStatement,
 			 }
 			oMasterPage.destroyContent()
 			oMasterPage.addContent(standardList);
-			buildDetailsContent(firstJob)
+			
+			
 		 },
 		 function(error, statement){
 			 alert(error+statement)
@@ -523,7 +541,7 @@ var orderno=res[1];
 var opno=res[2];
 var StatusState="";
 var StatusIcon="";
-SQLStatement="SELECT MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+SQLStatement="SELECT MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.postcode, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
 	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
@@ -572,7 +590,9 @@ html5sql.process(SQLStatement,
 
 					state : StatusState
 			 }))
-			currentStatus=rowsArray[0].opstat;
+			 				 currentPostcode=rowsArray[0].postcode;
+			 currentJob="job:"+rowsArray[0].orderno+':'+rowsArray[0].opno;
+			 currentStatus=rowsArray[0].opstat;
 			 if(currentStatus=="Job Finished"){
 				
 				 sap.ui.getCore().getElementById('tconfFooterChangeStatus').setEnabled(false)
@@ -959,8 +979,16 @@ deleteDBAbsence(currentAbsence)
 	}
 
 	oSplitApp.placeAt("body");
+
 </script>
 </head>
 <body id="body" class="sapUiBody">
+<script>
+$(function() {
+	//	jQuery("#content").html("Hello World - UI5 is ready");
+
+	
+	});
+</script>
 </body>
 </html>
