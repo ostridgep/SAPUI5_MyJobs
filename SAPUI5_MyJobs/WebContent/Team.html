@@ -18,11 +18,104 @@ jQuery.sap.require("sap.m.MessageBox");
 
 
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+var formCreate = new sap.m.Dialog("dlgCreateMessage",{
+    title:"Create Message",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Send",
+					    tap: [ function(oEvt) {		  
+							CreateTheMessage(); 
+							formCreate.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formCreate.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+
+								new sap.m.Label({text:"To"}),
+								new sap.m.Select('createTo',{
+									
+									items: [
+										
+									]
 
 
+								}),
+			
+								
+								new sap.m.Label({text:"Subject"}),
+								new sap.m.Input("createSubject",{ type: sap.m.InputType.Input}),
+							
+								new sap.m.Label({text:"Message"}),
+								new sap.m.TextArea("createMessage",{ rows: 5}),
+				                  
+							]
+ 					})
+
+            ]
+	 })
+var formMessage = new sap.m.Dialog("dlgMessage",{
+    title:"Message",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+   
+					new sap.m.Button( {
+					    text: "OK",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formMessage.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+
+								new sap.m.Label('messageType',{text:""}),
+								new sap.m.Input("messageTo",{ type: sap.m.InputType.Input}),
+								
+								new sap.m.Label({text:"Subject"}),
+								new sap.m.Input("messageSubject",{ type: sap.m.InputType.Input}),
+							
+								new sap.m.Label({text:"Message"}),
+								new sap.m.TextArea("messageMessage",{ rows: 5}),
+				                  
+							]
+ 					})
+
+            ]
+	 })
 
 
+var detailFooter = new sap.m.Bar({
+	id: 'detailFooter',
 
+					contentMiddle : [
+									new sap.m.Button("Create", {
+										 text: "Create Message",
+										 icon:"sap-icon://create",
+										 press: [ function(){
+											 prepareCreateMessage();
+											 formCreate.open();
+												}]
+									 })
+									]
+	
+})
 var page  = new sap.m.Page('MyTeam',{
 	title:"My Team",  
 
@@ -33,7 +126,7 @@ var page  = new sap.m.Page('MyTeam',{
 		press : function(){ window.location.href="Home.html"}
 		
 	}),
-
+footer:detailFooter,
 
     content: 	
     	[
@@ -46,11 +139,7 @@ var page  = new sap.m.Page('MyTeam',{
 					expanded:'{device>/isNoPhone}',
 
 					select:[function(oEvt) {		  
-						  if(oEvt.getParameters().key=="Received"){oDetailPage.setFooter(detailFooter)}
-						  if(oEvt.getParameters().key=="Sent"){oDetailPage.setFooter(detailFooter)}
-						  if(oEvt.getParameters().key=="System"){oDetailPage.setFooter(detailFooter)}
-						  if(oEvt.getParameters().key=="Team"){oDetailPage.setFooter(detailFooter)}
-		
+						 
 						}
 						],
 			
@@ -60,8 +149,16 @@ var page  = new sap.m.Page('MyTeam',{
 	                   key:'Received',
 	                   tooltip: 'Received Messages',
 	                   icon: "sap-icon://email",
+	                   
    	                   content:[
 							new sap.m.Table("ReceivedTable",{
+								itemPress:[function(oEvt) {		
+									  
+								     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+								}
+									  
+									 ],
+
 								columns:[
 								         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
 								        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
@@ -79,6 +176,11 @@ var page  = new sap.m.Page('MyTeam',{
 	                   icon: "sap-icon://forward",
    	                   content:[
 							new sap.m.Table("SentTable",{
+								itemPress:[function(oEvt) {		
+								     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+								     } 
+									 ],
+								  mode:sap.m.ListMode.SingleSelectMaster,
 								columns:[
 								         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
 								        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
@@ -90,10 +192,11 @@ var page  = new sap.m.Page('MyTeam',{
 							})
 							]
 			    }),
+	               
 	               new sap.m.IconTabFilter( 'System',{
 	                   key:'System',
 	                   tooltip: 'System Messages',
-	                   icon: "sap-icon://Alert",
+	                   icon: "sap-icon://alert",
    	                   content:[
 							new sap.m.Table("SystemTable",{
 								columns:[
@@ -107,6 +210,23 @@ var page  = new sap.m.Page('MyTeam',{
 							})
 							]
 			    	}),
+			    	new sap.m.IconTabFilter( 'Contacts',{
+		                   key:'Contacts',
+		                   tooltip: 'Team Members',
+		                   icon: "sap-icon://contacts",
+	   	                   content:[
+								new sap.m.Table("ContactsTable",{
+									columns:[
+									         new sap.m.Column({header: new sap.m.Label({text:"ID"}),
+									        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+									        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"TelNo"}),
+									        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true })       	                         
+							           	     ]
+								})
+								]
+				    }),
    	                new sap.m.IconTabFilter( 'Team',{
 	                   key:'Team',
 	                   tooltip: 'Team',
@@ -133,7 +253,7 @@ $(function() {
 	buildReceived()
 	buildSent()
 	buildSystem()
-	
+	buildContacts()
 	});
 </script>
 </head>
@@ -141,6 +261,7 @@ $(function() {
 <script></script>
 </body>
 <script>
+
 function buildReceived(){
 	html5sql.process("SELECT * FROM MyMessages  ;",
 			 function(transaction, results, rowsArray){
@@ -150,7 +271,8 @@ function buildReceived(){
 				while (n < rowsArray.length) {
 					
 			
-					opTable.addItem (new sap.m.ColumnListItem({
+					opTable.addItem (new sap.m.ColumnListItem('RECEIVED:'+rowsArray[n].id,{
+						type: "Active",
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
@@ -158,7 +280,7 @@ function buildReceived(){
 						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
 					 		]
-						}));
+						}))
 					n++;
 				 }
 
@@ -169,15 +291,17 @@ function buildReceived(){
 			);	
 }
 function buildSent(){
-	html5sql.process("SELECT * FROM MyMessages  ;",
+	html5sql.process("SELECT * FROM MyMessages where msgfromid = 'SENTMSG' ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;
 				var opTable = sap.ui.getCore().getElementById('SentTable');
-				opTable.removeAllItems();
+				sap.ui.getCore().getElementById('SentTable').removeAllItems();
+				
 				while (n < rowsArray.length) {
 					
 			
-					opTable.addItem (new sap.m.ColumnListItem({
+					opTable.addItem (new sap.m.ColumnListItem('SENT:'+rowsArray[n].id,{
+						type: "Active",
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
@@ -185,7 +309,10 @@ function buildSent(){
 						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
 					 		]
-						}));
+
+						}))
+
+					
 					n++;
 				 }
 
@@ -204,7 +331,7 @@ function buildSystem(){
 				while (n < rowsArray.length) {
 					
 			
-					opTable.addItem (new sap.m.ColumnListItem({
+					opTable.addItem (new sap.m.ColumnListItem("SYSTEM"+n,{
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
@@ -221,6 +348,119 @@ function buildSystem(){
 				 //outputLogToDB(); 
 			 }        
 			);	
+}
+function buildContacts(){
+	html5sql.process("SELECT * FROM MyRefUsers  ;",
+			 function(transaction, results, rowsArray){
+				var n = 0;
+				var opTable = sap.ui.getCore().getElementById('ContactsTable');
+				opTable.removeAllItems();
+				while (n < rowsArray.length) {
+					
+			
+					opTable.addItem (new sap.m.ColumnListItem({
+						cells : 
+							[
+							  new sap.m.Text({text: rowsArray[n].userid}),
+							  new sap.m.Text({text: rowsArray[n].firstname+" "+rowsArray[n].lastname}),
+							  new sap.m.Text({text: rowsArray[n].telno})   
+					 		]
+
+						}));
+					n++;
+				 }
+
+			 },
+			 function(error, statement){
+				 //outputLogToDB(); 
+			 }        
+			);	
+}
+function prepareCreateMessage(){
+	html5sql.process("SELECT * FROM MyRefUsers  ;",
+			 function(transaction, results, rowsArray){
+				var n = 0;
+				var opTable = sap.ui.getCore().getElementById('createTo');
+				opTable.removeAllItems();
+				while (n < rowsArray.length) {
+					
+			
+					opTable.addItem (
+						new sap.ui.core.Item({
+							key: rowsArray[n].userid,
+							text: rowsArray[n].firstname+" "+rowsArray[n].lastname
+						}))
+						
+					n++;
+				 }
+
+			 },
+			 function(error, statement){
+				 //outputLogToDB(); 
+			 }        
+			);	
+}
+function CreateTheMessage()
+{
+
+		SQLStatement='INSERT INTO MyMessages (type, date, time, msgfromid, msgfromname, msgid, expirydate,  msgtoid, msgtoname, msgsubject, msgtext, state) VALUES ( '+ 
+							  '"MYJOBS",'+
+							  '"'+getDate()+'",'+
+							  '"'+getTime()+'",'+
+							  '"SENTMSG",'+
+							  '"SENTMSG",'+
+							  '"0",'+
+							  '"00000000",'+
+							  '"'+sap.ui.getCore().byId("createTo").getSelectedItem().getKey()+'",'+
+							  '"'+sap.ui.getCore().byId("createTo").getSelectedItem().getText()+'",'+
+							  '"'+sap.ui.getCore().byId("createSubject").getValue()+'",'+
+							  '"'+sap.ui.getCore().byId("createMessage").getValue()+'",'+
+							  '"NEW");'
+
+		html5sql.process(SQLStatement,
+			 function(transaction, results, rowsArray){
+	
+				buildSent()
+				
+			 },
+			 function(error, statement){		
+				
+			
+			 }        
+			);
+		
+}
+function prepareDisplayMessage(tid){
+res=tid.split(":")
+var mtype=res[0]
+var id = res[1]
+var	SQLStatement='Select * from MyMessages where id = "'+id+'"'
+
+
+html5sql.process(SQLStatement,
+function(transaction, results, rowsArray){
+
+	sap.ui.getCore().getElementById("messageSubject").setValue(rowsArray[0].msgsubject)
+	sap.ui.getCore().getElementById("messageMessage").setValue(rowsArray[0].msgtext)
+
+	if(mtype=="SENT"){
+		sap.ui.getCore().getElementById("messageType").setText('To')
+		sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgtoname)
+	
+	}else{
+		sap.ui.getCore().getElementById("messageType").setText('From')
+		sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgfromname)
+		
+	}
+	
+formMessage.open()
+},
+function(error, statement){		
+
+	
+}        
+);
+
 }
 </script>
 </html>
