@@ -3,21 +3,84 @@
 <head>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <title>MyJobs - My Team</title>
+
 <script src="resources/sap-ui-core.js" type="text/javascript"
 	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
 	data-sap-ui-theme="sap_bluecrystal">
 	
 </script>
+
 <script src="myresources/js/html5sql.js"></script>  
 <script src="myresources/js/bqsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script src="myresources/js/jquery-gmaps-latlon-picker.js"></script>
+<script src="myresources/js/maplace-0.1.3.js"></script>
+<style type='text/css'>
+
+  .boxeddiv {border: 1px solid grey;
+      margin: 1em 1em  1em 1em;
+	
+	border-radius: 10px;}
+
+  .boxeddiv1 {border: 1px solid grey;
+      
+border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;}
+  
+  
+  
+  
+  
+ .block {
+    border: 1px solid grey;
+    width: 98%;
+    height:800px;
+    display: inline-block;
+    margin: 1em 1em 1em 1em;
+	border-radius: 15px;
+    left:50px
+}
+  .highlight {
+
+     box-shadow: 5px 5px 5px #888888;
+
+  }
+  .gllpLatlonPicker	{ margin: 20px 0; }
+.gllpMap	{  width: 500px; height:500px; }
+
+  </style>
 <script type="text/javascript">
 
 jQuery.sap.require("sap.m.MessageBox");
 
 
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+//Need to Fetch From Users DMB
+var LocsA = [
+    {
+        lat: 52.5202507,
+        lon: -1.6350539999999683,
+        title: 'Charley Farley',
+        icon: 'images/van1.gif',
+		html: 'Charley Farley'
+    },
+    {
+        lat: 52.45962636383875,
+        lon: -1.7538436728515308,
+        title: 'Slarty Bartfast',
+        icon: 'images/van1.gif',
+		html: 'Slarty Bartfast'
+    },
+    {
+        lat: 52.184308275501834,
+        lon: -2.2125228720702808,
+        title: 'Jimmy Hendrix',
+        icon: 'images/van1.gif',
+		html: 'Jimmy Hendrix'
+    }
+];
 var formCreate = new sap.m.Dialog("dlgCreateMessage",{
     title:"Create Message",
     modal: true,
@@ -138,8 +201,16 @@ footer:detailFooter,
 					{
 					expanded:'{device>/isNoPhone}',
 
-					select:[function(oEvt) {		  
-						 
+					select:[function(oEvt) {		
+						
+						if(oEvt.getParameters().key=="Team"){
+							
+							new Maplace({
+							    locations: LocsA,
+							    map_div: '#TeamMap',
+							    controls_title: 'Choose Team Member:'
+							}).Load();
+							}
 						}
 						],
 			
@@ -232,8 +303,10 @@ footer:detailFooter,
 	                   tooltip: 'Team',
 	                   icon: "sap-icon://account",
 	                   content:[
-								new sap.m.Text( 'LongText',{})
-	                            ]
+								sap.ui.core.HTML({
+									content:	"<div id='TeamMap' class='gmap'  style='height: 400px;'>Google Maps</div>"
+								})
+								]
 	                })			            	                
    	                ] //item
 					}) //tabbar
@@ -254,6 +327,9 @@ $(function() {
 	buildSent()
 	buildSystem()
 	buildContacts()
+	
+
+
 	});
 </script>
 </head>
