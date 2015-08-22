@@ -19,6 +19,7 @@
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
 var currentStatus;
 var firstNotification="";
+var selectedTimesheetDate;
 var EmployeeID = localStorage.getItem("EmployeeID")
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
@@ -60,19 +61,23 @@ var standardList  = new sap.m.List(
 	
 var firstEntry="none:-1";
 
-var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
-    title:"Create Notification",
+var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
+    title:"Create Timesheet Entry",
     modal: true,
     contentWidth:"1em",
     buttons: [
 					new sap.m.Button( {
 					    text: "Save",
 					    tap: [ function(oEvt) {		  
-							/* createTimeConf(AbsenceType,startDate,endDate,
-									sap.ui.getCore().byId("Days").getValue(),
-									sap.ui.getCore().byId("Description").getValue(),
-									sap.ui.getCore().byId("Comments").getValue());  */
-									formNewNotif.close()
+					    	createTimesheetEntry(selectedTimesheetDate,
+									sap.ui.getCore().byId("Job").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Skill").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Activity").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Time").getValue(),
+						
+									sap.ui.getCore().byId("OT15").getValue(),
+									sap.ui.getCore().byId("OT20").getValue());  
+									formNewTimesheetEntry.close()
 							  } ]
 					   
 					}),   
@@ -80,7 +85,7 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 					    text: "Cancel",
 					    tap: [ function(oEvt) {		  
 							 
-					    	formNewNotif.close()} ]   
+					    	formNewTimesheetEntry.close()} ]   
 					})
 					],					
     content:[
@@ -90,23 +95,23 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 				content : [
 								
 								
-								new sap.m.Label({text:"Coding"}),
-								new sap.m.Select('NewType',{
+								new sap.m.Label({text:"Job"}),
+								new sap.m.Select('Job',{
 									
 									items: [
 										new sap.ui.core.Item({
-											key: "1",
-											text: "M1 Notification"
+											key: "Job1",
+											text: "Job1"
 										}),
 
 										new sap.ui.core.Item({
-											key: "2",
-											text: "M2 Notification"
+											key: "Job2",
+											text: "Job2"
 										}),
 
 										new sap.ui.core.Item({
-											key: "3",
-											text: "M3 - Notification"
+											key: "Job3",
+											text: "Job3"
 										})
 									],
 
@@ -114,22 +119,22 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
 									}
 								}),
-								new sap.m.Select('NewSource',{
+								new sap.m.Select('Skill',{
 									
 									items: [
 										new sap.ui.core.Item({
-											key: "1",
-											text: "General"
+											key: "skill1",
+											text: "Skill1"
 										}),
 
 										new sap.ui.core.Item({
-											key: "2",
-											text: "Hardware"
+											key: "skill2",
+											text: "Skill2"
 										}),
 
 										new sap.ui.core.Item({
-											key: "3",
-											text: "Software"
+											key: "skill1",
+											text: "Skill3"
 										})
 									],
 
@@ -137,22 +142,22 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
 									}
 								}),
-								new sap.m.Select('Code',{
+								new sap.m.Select('Activity',{
 									
 									items: [
 										new sap.ui.core.Item({
-											key: "1",
-											text: "Code 1"
+											key: "Activity1",
+											text: "Activity 1"
 										}),
 
 										new sap.ui.core.Item({
-											key: "2",
-											text: "Code 2"
+											key: "Activity2",
+											text: "Activity 2"
 										}),
 
 										new sap.ui.core.Item({
-											key: "3",
-											text: "Code 3"
+											key: "Activity3",
+											text: "Activity 3"
 										})
 									],
 
@@ -161,50 +166,58 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 									}
 								}),
 								
-								new sap.m.Label({text:"Priority"}),
-								new sap.m.Select('NewPriority',{
-									
-									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "Red"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "Amber"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "Green"
-										})
-									],
-
-									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
-									}
-								}),
-								new sap.m.Label({text: "Start Date/Time:"}),
 								
-								new sap.m.DateTimeInput('NewNotifStart',{
-									width : "99%",
-									type : "DateTime",
-									displayFormat : "yyyy/MM/dd hh:mm",
-									dateValue : new Date()
-								}),
-								new sap.m.Label({text:"Description"}),
-								new sap.m.Input("NewDescription",{ type: sap.m.InputType.Input}),
+								new sap.m.Label({text:"Time"}),
+								new sap.m.Input("Time",{ type: sap.m.InputType.Number}),
 								
-								new sap.m.Label({text:"Details"}),
-								new sap.m.TextArea("NewDetails",{ rows: 3}),
+								new sap.m.Label({text:"Overtime at 1.5"}),
+								new sap.m.TextArea("OT15",{ rows: 3}),
 
-			new sap.m.Label({text:"Functional Location"}),
-			new sap.m.Input("NewFuncLoc",{ type: sap.m.InputType.Input}),
+
 			
-			new sap.m.Label({text:"Equipment"}),
-			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input}),								
+			new sap.m.Label({text:"Overtime at 2.0"}),
+			new sap.m.Input("OT20",{ type: sap.m.InputType.Input}),								
 				                  
+							]
+ 					})
+
+            ]
+	 })
+var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
+    title:"Create Timesheet",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+							createTimesheetHeader(sap.ui.getCore().byId("NewTimesheetDate").getValue());  
+									formNewTimesheet.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formNewTimesheet.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+								
+
+								new sap.m.Label({text: "Date:"}),
+								
+								new sap.m.DateTimeInput('NewTimesheetDate',{
+									width : "99%",
+									type : "Date",
+									displayFormat : "yyyy/MM/dd",
+									dateValue : new Date()
+								})
 							]
  					})
 
@@ -215,16 +228,18 @@ var item;
 var lStatus="";
 var StatusState="";
 var StatusIcon="";
-	SQLStatement="SELECT * from tsdata where job='header'"
+var firstTsheet="";
+	SQLStatement="SELECT * from tsdata where activity='header'"
 html5sql.process(SQLStatement,
 		 function(transaction, results, rowsArray){
 
 			cnt = 0;
 			while (cnt<rowsArray.length){
+				item=rowsArray[cnt];
 				if(cnt==0){
 					firstTsheet="tsheet:"+item.id
 				}
-				item=rowsArray[cnt];
+				
 				if (item.activity=="SUBMITTED"){
 					StatusState="Error"
 				}else{
@@ -297,8 +312,9 @@ var tsheet=res[1];
 var StatusState="";
 var StatusIcon="";
 var Status
+
 SQLStatement="SELECT * from tsdata where id = '"+tsheet+"'"
-selectedData;
+
 html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
 
@@ -308,7 +324,7 @@ html5sql.process(SQLStatement,
 			 }
 			 
 			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].date)
-			selectedDate=rowsArray[0].date;
+			 selectedTimesheetDate=rowsArray[0].date;
 			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
 					text : rowsArray[0].activity,
@@ -322,7 +338,7 @@ html5sql.process(SQLStatement,
 			 
 		 }
 		
-		 html5sql.process("SELECT * FROM tsdata where activity <> 'header' date = '"+selectedDate+"' ;",
+		 html5sql.process("SELECT * FROM tsdata where activity <> 'header' date = '"+selectedTimesheetDate+"' ;",
 				 function(transaction, results, rowsArray){
 					var n = 0;
 					var opTable = sap.ui.getCore().getElementById('ActivitiesTable');
@@ -366,7 +382,58 @@ html5sql.process(SQLStatement,
 
 
 }
+function createTimesheetHeader(d){
+	var x =d.split("/")
+	
+	var tsdate= new Date(Number(x[2])+2000,x[0],x[1])
+	
 
+	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()+1).toString() ) +  zeroFill1(tsdate.getDate().toString());
+	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+								  '"'+TimesheetDate+'",'+
+								  '"",'+
+								  '"",'+
+								  '"header",'+
+								  '"",'+
+								  '"",'+
+								  '"");'
+
+			
+
+			html5sql.process(SQLStatement,
+				 function(transaction, results, rowsArray){
+
+					
+				 },
+				 function(error, statement){
+					alert("Failed Created TS Entry"+statement)
+				 }        
+				);
+	}
+function createTimesheetEntry(job,skill,activity,time,ot15,ot20){
+	
+
+	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+								  '"'+selectedTimesheetDate+'",'+
+								  '"'+job+'",'+
+								  '"'+skill+'",'+
+								  '"'+activity+'",'+
+								  '"'+time+'",'+
+								  '"'+ot15+'",'+
+								  '"'+ot20+'");'
+
+			
+
+			html5sql.process(SQLStatement,
+				 function(transaction, results, rowsArray){
+				 
+				
+				 },
+				 function(error, statement){
+					alert("Failed Created TS Entry")
+				 }        
+				);
+	}
 function buildDetailsTable(){
 	
        
@@ -402,8 +469,22 @@ function buildDetailsTable(){
 	var oDetailPage = new sap.m.Page(
 			"detail",
 			{
-				title : "Notiofication Details",
-				content : [buildDetails()],
+				title : "Entries",
+				content : [buildDetails(),buildDetailsTable()],
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer',
+
+							contentRight : [
+									new sap.m.Button("AddNewTimeSheet", {
+					   					 text: "create",
+					  					 press: [ function(){
+					  						formNewTimesheetEntry.open(); 
+					  						
+					  							}]
+										 })
+								]
+						}),
 				showNavButton: true,
 					 
 					 navButtonPress: function() {				                  
@@ -423,19 +504,19 @@ function buildDetailsTable(){
                     	 window.location.href="Home.html"
                      }
 }),
-				title : "Notifications",
+				title : "Timesheets",
 				
 				content : [ buildTimeSheets()],
 				showNavButton: "{device>/isPhone}" ,
 				footer  : new sap.m.Bar (
 						{
-							id : 'master-footer',
+							id : 'master-footer1',
 
 							contentLeft : [
-									new sap.m.Button("Add1", {
+									new sap.m.Button("AddNewTimeSheetEntry", {
 					   					 text: "create",
 					  					 press: [ function(){
-					  						formNewNotif.open(); 
+					  						formNewTimesheet.open(); 
 					  						
 					  							}]
 										 })
