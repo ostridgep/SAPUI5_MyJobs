@@ -23,7 +23,9 @@ var currentJob;
 var firstJob="";
 var EmployeeID = localStorage.getItem("EmployeeID")
 var MapJob=getURLParameters("MapJob");
-
+MapJob1=MapJob+":"
+MapJobPar=MapJob1.split(":")
+var selectedListItem=0;
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
 		contentLeft : [
@@ -75,24 +77,13 @@ var firstItem=""
 var standardList  = new sap.m.List("JobList",
 		  {
 			  //items:standardListItem,
-			  itemPress:[function(oEvt) {		  
+			  itemPress:[function(oEvt) {	
 				  buildDetailsContent(oEvt.getParameter("listItem").getId());
 				  localStorage.setItem("SelectedItem",oEvt.getParameter("listItem"))
 				  oSplitApp.to("detail")}],
 			  mode:sap.m.ListMode.SingleSelectMaster,
 			  updateFinished : function(oEvent){   
-		          firstItem = sap.ui.getCore().byId("JobList").getItems()[0];   
-		             
-		          MapJob1=MapJob+":"
-				  res=MapJob1.split(":")
-					
-					if(res[0]=="job")
-						{	
-						
-						sap.ui.getCore().byId("JobList").setSelectedItem(localStorage.getItem("SelectedItem"),true);			
-						}else{
-						sap.ui.getCore().byId("JobList").setSelectedItem(firstItem,true);
-						}
+		          
 		      
 		          }  
 		  });
@@ -422,11 +413,20 @@ html5sql.process(SQLStatement,
 
 			cnt = 0;
 			while (cnt<rowsArray.length){
-
 				item=rowsArray[cnt];
 				if(cnt==0){
 					firstJob="job:"+item.orderno+':'+item.opno
 				}
+				
+				if(MapJobPar[0]=="job"){
+					if (MapJobPar[1]==item.orderno){
+						if (MapJobPar[2]==item.opno)
+							selectedListItem=cnt;
+							firstJob="job:"+item.orderno+':'+item.opno
+					}
+				}
+					
+				
 				 if(item.opstat=="Job Init"){
 					 StatusState=sap.ui.core.ValueState.None
 					 StatusIcon="create"
@@ -480,7 +480,7 @@ html5sql.process(SQLStatement,
 			 }
 			oMasterPage.destroyContent()
 			oMasterPage.addContent(standardList);
-			
+			selectListDefault();
 			
 		 },
 		 function(error, statement){
@@ -656,77 +656,7 @@ function buildDetailsTabs(){
 				],
 				
 				items: [
-       	                new sap.m.IconTabFilter( 'STATUS',{
-       	                   key:'Status',
-       	                tooltip: 'User Status',
-       	                 icon: "sap-icon://order-status",
-       	                   content:
-       	                	   [
-       	                	 new sap.ui.layout.form.Form("S1",{
-        	              			
-        	              			editable: true,
-        	              			layout: oLayout1,
-        	              			formContainers: [
-        	              				new sap.ui.layout.form.FormContainer("S1C1",{
-        	              					
-        	              					formElements: [
-        	              						new sap.ui.layout.form.FormElement({
-        	              							
-        	              							fields: [ 
-        	              							         new sap.m.Text({text: "Generic H&S Guide cons"}),
-        	              							         new sap.m.CheckBox({selected: "{checked}"}),  
 
-        	              							         new sap.m.Text({text: "No H&S Guide cons"}),
-        	              							         new sap.m.CheckBox({selected: "{checked}"}) 
-        	              							]
-        	              						}),
-        	              						new sap.ui.layout.form.FormElement({
-        	              							
-        	              							fields: [ 
-        	              							          
-
-        	              							         new sap.m.Text({text: "Site Specific H&S Guide cons"}),
-        	              							         new sap.m.CheckBox({selected: "{checked}"}),  
-
-        	              							         new sap.m.Text({text: "Unable to Complete"}),
-        	              							         new sap.m.CheckBox({selected: "{checked}"}) 
-        	              							]
-        	              						}),       	              						
-        	              						new sap.ui.layout.form.FormElement({
-        	              							
-        	              							fields: [
-        	              			      	      		new sap.m.Text({text: "Unable to Start"}),
-        	              		      	      		new sap.m.CheckBox({selected: "{checked}"}),  
-
-        	              		      	      		new sap.m.Text({text: "Procurement Card"}),
-        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})     
-        	              							]
-        	              						}),
-        	              						new sap.ui.layout.form.FormElement({
-        	              							
-        	              							fields: [
-
-
-        	              		      	      		new sap.m.Text({text: "SAP Purchase Order"}),
-        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})  ,
-
-        	              		      	      		new sap.m.Text({text: "Used from stock"}),
-        	              		      	      		new sap.m.CheckBox({selected: "{checked}"})       
-        	              							]
-        	              						})
-        	              						]
-        	              				})
-        	              				
-        	              			]
-        	              		
-       	                	 })
-
-    	   ]
-       	                	   
-       	                	   
-       	                	   
-       	                	   
-       	                }),
      	               new sap.m.IconTabFilter( 'OBJECTS',{
     	                   key:'Assets',
     	                   tooltip: 'Assets',
@@ -940,7 +870,7 @@ deleteDBAbsence(currentAbsence)
 				
 				content : [ buildJobs()],
 				showNavButton: "{device>/isPhone}" ,
-				  : new sap.m.Bar (
+				footer  : new sap.m.Bar (
 						{
 							id : 'master-footer',
 
@@ -979,16 +909,28 @@ deleteDBAbsence(currentAbsence)
 	}
 
 	oSplitApp.placeAt("body");
-
+	//selectListDefault();
 </script>
 </head>
 <body id="body" class="sapUiBody">
 <script>
 $(function() {
-	//	jQuery("#content").html("Hello World - UI5 is ready");
-
+	
+	oSplitApp.onAfterRendering = function() {  
+		selectListDefault() 
+        }  
+		
+	
 	
 	});
+function selectListDefault(){
+
+	firstItem = sap.ui.getCore().getElementById("JobList").getItems()[selectedListItem];   
+
+	sap.ui.getCore().getElementById("JobList").setSelectedItem(firstItem,true);
+	  buildDetailsContent(firstJob);
+	  oSplitApp.to("detail");
+}
 </script>
 </body>
 </html>
