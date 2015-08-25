@@ -1127,8 +1127,7 @@ function onSuccess(imageData) {
 	    alert('Failed because: ' + message);
 	}
 	function takePhoto(){
-		//syncThePhoto(CurrentNotifNo,"xx")
-		//navigator.camera.getPicture(onCamSuccess, onCamFail, {quality:50, destinationType:Camera.DestinationType.FILE_URI});
+
 
 		navigator.camera.getPicture(onSuccess, onFail, { quality: 50,
 		    destinationType: Camera.DestinationType.FILE_URI});
