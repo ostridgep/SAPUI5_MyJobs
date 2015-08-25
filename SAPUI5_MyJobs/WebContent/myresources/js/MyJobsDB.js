@@ -1717,6 +1717,7 @@ opMessage("Callback objects triggured");
 }
 function notificationCB(MyNotifications){
 var sqlstatement;
+var notiftype=""
 opMessage("Callback Notifications triggured");
 
 
@@ -1747,15 +1748,21 @@ opMessage("Callback Notifications triggured");
 
 			for(var cntx=0; cntx < MyNotifications.notification.length ; cntx++)
 				{
-			
-
+		
+				if(MyNotifications.notification[cntx].sortfield.length==0){
+					notiftype=MyNotifications.notification[cntx].type;
+				}else{
+					notiftype=MyNotifications.notification[cntx].sortfield;
+				}
+				
 				sqlstatement+='INSERT INTO MyNotifications (notifno , shorttext , longtext , startdate , priority , type, funcloc, equipment, orderno, reportedon , reportedby , plant, funclocgis, equipmentgis, cattype, pgroup, pcode, grouptext, codetext) VALUES ( '+ 
 					'"'+MyNotifications.notification[cntx].notifno +'",'+
 					'"'+MyNotifications.notification[cntx].shorttext+'",'+ 
 					'"'+MyNotifications.notification[cntx].longtext +'",'+ 
 					'"'+MyNotifications.notification[cntx].startdate+'",'+ 
 					'"'+MyNotifications.notification[cntx].priority+'",'+
-					'"'+MyNotifications.notification[cntx].type+'",'+
+					//'"'+MyNotifications.notification[cntx].type+'",'+
+					'"'+notiftype+'",'+
 					'"'+MyNotifications.notification[cntx].funcloc +'",'+ 
 					'"'+MyNotifications.notification[cntx].equipment +'",'+
 					'"'+MyNotifications.notification[cntx].orderno+'",'+

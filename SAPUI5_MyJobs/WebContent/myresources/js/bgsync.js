@@ -23,7 +23,13 @@ function myTimer(d0)
    }
 
    // return output to Web Worker
-   postMessage(minutes+":"+seconds,"*");
+   try {
+	   postMessage(minutes+":"+seconds);
+	}
+	catch (e) {
+	   
+	}
+  
 }
                 
 if (timerStart){

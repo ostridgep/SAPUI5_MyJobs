@@ -17,6 +17,10 @@
 <script src="myresources/js/MyJobsUtils.js"></script>
 <script type="text/javascript">
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
+var selectedTab="";
+var Longtext;
+var JobType=""
 var currentStatus;
 var currentPostcode;
 var currentJob;
@@ -398,7 +402,7 @@ var item;
 var lStatus="";
 var StatusState="";
 var StatusIcon="";
-	SQLStatement="SELECT MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+	SQLStatement="SELECT MyNotifications.pcode, MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
 	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
@@ -406,7 +410,10 @@ var StatusIcon="";
 	SQLStatement+="	and myoperations.opno = myoperationssplit.opno "
 	SQLStatement+="left join myuserstatus on myoperations.orderno = myuserstatus.orderno "
 	SQLStatement+="	and myoperations.opno = myuserstatus.opno "
+
+			
 		SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
+			SQLStatement+="left join mynotifications on myorders.notifno = mynotifications.notifno "
 			SQLStatement+=" where myoperationssplit.assignedto = '"+EmployeeID+"'"
 html5sql.process(SQLStatement,
 		 function(transaction, results, rowsArray){
@@ -494,7 +501,7 @@ cnt = 0;
 
 }
 function buildDetails(){
-	
+
 		var objectHeader  = new sap.m.ObjectHeader('HEADER',
 {
 			
@@ -515,6 +522,9 @@ function buildDetails(){
 	            	                    
 	            	                }),
 	            	                new sap.m.ObjectAttribute('Equipment',{
+	            	                    
+	            	                }),
+new sap.m.ObjectAttribute('NotifNo',{
 	            	                    
 	            	                })
 	               	                ],
@@ -541,7 +551,10 @@ var orderno=res[1];
 var opno=res[2];
 var StatusState="";
 var StatusIcon="";
-SQLStatement="SELECT MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.postcode, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+var tabsdesc=""
+var tabsid=""
+var notifno=""
+SQLStatement="SELECT MyNotifications.pcode, MyNotifications.type as notiftype, MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.postcode, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
 	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
@@ -549,7 +562,10 @@ SQLStatement="SELECT MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, 
 	SQLStatement+="	and myoperations.opno = myoperationssplit.opno "
 	SQLStatement+="left join myuserstatus on myoperations.orderno = myuserstatus.orderno "
 	SQLStatement+="	and myoperations.opno = myuserstatus.opno "
+		
+	
 		SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
+			SQLStatement+="left join mynotifications on myorders.notifno = mynotifications.notifno "
 			SQLStatement+=" where myoperations.orderno = '"+orderno+"'"
 			SQLStatement+=" and myoperations.opno = '"+opno+"'"
 
@@ -557,6 +573,11 @@ html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
 
 		 if (rowsArray.length>0){
+			 notifno=rowsArray[0].notifno;
+			 JobType=rowsArray[0].notiftype;
+			 oDetailPage.destroyContent()
+			 oDetailPage.addContent(buildDetails())
+
 			 if(rowsArray[0].opstat=="Job Init"){
 				 StatusState=sap.ui.core.ValueState.None
 				 StatusIcon="create"
@@ -581,8 +602,8 @@ html5sql.process(SQLStatement,
 			 }
 			 
 			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].operationdesc)
-			 sap.ui.getCore().getElementById('HEADER').setNumber(rowsArray[0].orderno)
-			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(rowsArray[0].opno)
+			 sap.ui.getCore().getElementById('HEADER').setNumber(rowsArray[0].orderno+"-"+rowsArray[0].opno)
+			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(rowsArray[0].notiftype)
 			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
 					text : rowsArray[0].opstat,
@@ -602,6 +623,8 @@ html5sql.process(SQLStatement,
 				 sap.ui.getCore().getElementById('tconfFooterChangeStatus').setEnabled(true)
 				 sap.ui.getCore().getElementById('changeStatus').setEnabled(true)
 			 }
+			  sap.ui.getCore().getElementById('NotifNo').setTitle("Notification No")
+			  sap.ui.getCore().getElementById('NotifNo').setText(rowsArray[0].notifno)
 			  sap.ui.getCore().getElementById('StartDate').setTitle("Start Date")
 			  sap.ui.getCore().getElementById('StartDate').setText(formatDate(rowsArray[0].startdate))
 			  sap.ui.getCore().getElementById('EndDate').setTitle("End Date ")
@@ -613,12 +636,41 @@ html5sql.process(SQLStatement,
 			  sap.ui.getCore().getElementById('FuncLoc').setText(rowsArray[0].funcloc)	
 			  sap.ui.getCore().getElementById('Equipment').setTitle("Equipment ")	
 			  sap.ui.getCore().getElementById('Equipment').setText(rowsArray[0].equipment)	
-			  sap.ui.getCore().getElementById('LongText').setText(rowsArray[0].orderlongtext)	
+			  Longtext=rowsArray[0].orderlongtext	
 
 			 
 		 }
-		
-		 buildDetailsTabContent(orderno,opno)
+			
+		 if(JobType.length>3){
+			
+			 html5sql.process("Select * from myitems where notifno = '"+notifno+"'",
+					 function(transaction, results, rowsArray){
+				
+				 			cnt=0
+				 			while(cnt < rowsArray.length){
+				 				tabsdesc=tabsdesc+rowsArray[cnt].descript+":"
+				 				tabsid=tabsid+rowsArray[cnt].item_id+":"
+				 				cnt++;
+				 			}
+				 			tabsdesc=tabsdesc+"END"
+				 			tabsid=tabsid+"END"
+				 			oDetailPage.addContent(buildDetailsP100Tabs(tabsdesc,tabsid))
+			 				
+			 				buildDetailsP100TabContent(orderno,opno,notifno,tabsid)
+			 	},
+				 function(error, statement){
+					 //outputLogToDB(); 
+				 }        
+				);
+		 }else{
+			 
+			 oDetailPage.addContent(buildDetailsTabs())
+			  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
+
+			 buildDetailsTabContent(orderno,opno)
+		 }
+		 
+			
 		 //outputLogToDB();	
 	 },
 	 function(error, statement){
@@ -631,11 +683,6 @@ html5sql.process(SQLStatement,
 
 
 
-if(currentAbsence >-1){
-oDetailPage.setFooter(detailFooter)
-}else{
-oDetailPage.setFooter(null)
-}
 
 
 
@@ -646,7 +693,8 @@ function buildDetailsTabs(){
 			{
 				expanded:'{device>/isNoPhone}',
 
-				select:[function(oEvt) {		  
+				select:[function(oEvt) {	
+					
 					  if(oEvt.getParameters().key=="Status"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="Task"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
@@ -743,7 +791,145 @@ function buildDetailsTabs(){
 
 	}
 
+function buildDetailsP100Tabs(tabsdesc,tabsid){
+	
+tabitemsdesc=tabsdesc.split(":")
+tabitemsid=tabsid.split(":")
+	var tabBar  = new sap.m.IconTabBar('tabBar',
+			{
+				expanded:'{device>/isNoPhone}',
 
+				select:[function(oEvt) {	
+					selectedTab=oEvt.getParameters().key;
+					  if(oEvt.getParameters().key=="Status"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Task"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="MPoint"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="TConf"){oDetailPage.setFooter(tconfFooter)}
+					}
+				],
+				
+				items: [
+			            	                
+       	                ]
+
+
+			});
+cnt=0
+while(tabitemsdesc[cnt]!="END"){
+	
+	tabBar.addItem(
+               new sap.m.IconTabFilter( "Task:"+tabitemsid[cnt],{
+	                  
+	                  text:tabitemsdesc[cnt],
+	                  tooltip: tabitemsdesc[cnt],
+	                 
+	                   content:[
+								
+
+	       	                	 new sap.ui.layout.form.SimpleForm('TaskContent:'+tabitemsid[cnt],{
+	       	                			maxContainerCols: 2,
+	        	              			editable: true,
+	        	              			content: [
+
+	        	              				
+	        	              			]
+	        	              		
+	       	                	 })
+								]          	                
+	                })			
+	)
+cnt=cnt+1	
+}
+	return tabBar;
+
+	}
+	
+	
+function buildDetailsP100TabContent(orderNo,OpNo,notifno,tabsid){
+tabitemsid=tabsid.split(":")
+
+
+	//Create Status Details
+
+
+
+var cnt=0;
+	while(tabitemsid[cnt]!="END"){
+		P100TabCont(notifno,tabitemsid[cnt])
+	
+	cnt=cnt+1;
+	} 
+	
+}
+
+	
+
+function P100TabCont(notifno,tabid){
+var tasktext;	
+var phototab;
+var n = 0;
+var tabcontent;
+var tabcontentQ;
+	html5sql.process("SELECT * FROM mytasks where notifno = '"+notifno+"' and item_id = '"+tabid+"';",
+			 function(transaction, results, rowsArray){
+				tabcontent = sap.ui.getCore().getElementById('Task:'+tabid);
+				tabcontentQ = sap.ui.getCore().getElementById('TaskContent:'+tabid);
+				tabcontentQ.destroyContent();
+				n = 0;
+				while (n < rowsArray.length) {
+					
+					
+					tasktext=rowsArray[n].task_text.split(":")
+					
+					if(tasktext[0]=="HDR"){
+						tabcontent.setTooltip(tasktext[1]);
+						
+					}else{
+						
+						tabcontentQ.addContent (new sap.m.Label({text:tasktext[1]}));
+						
+						if(tasktext[0]=="PHOTO"){
+							phototab="Y"
+							tabcontentQ.addContent (new sap.m.Button( {
+							    text: "Take Photo",
+							    icon:"sap-icon://add-photo",
+							    type: 	sap.m.ButtonType.Accept,
+							    tap: [ function(oEvt) {		  
+							    	takePhoto()
+									  } ]
+							}));
+						}else if(tasktext[0]=="YN"){
+							tabcontentQ.addContent (new sap.m.Switch({
+								state: false,
+								type: sap.m.SwitchType.AcceptReject
+							}));
+						}else if(tasktext[0]=="TXT"){
+							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Text}));
+						}else if(tasktext[0]=="NUM"){
+							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Number}));
+						}else if(tasktext[0]=="CHK"){
+							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Text}));
+						}else if(tasktext[0]=="LTXT"){
+							tabcontentQ.addContent (new sap.m.TextArea({rows: 5}));
+						}
+					}
+					n++;
+				 }
+				if(phototab=="Y"){
+				
+					tabcontentQ.addContent (new sap.m.Label({text:'Photo'}));
+					
+					tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img id="imgPreview'+tabid+'">'}))
+						}
+				
+
+			 },
+			 function(error, statement){
+				alert(statement)
+			 }        
+			);	
+}
 function buildDetailsTabContent(orderNo,OpNo){
 
 
@@ -846,11 +1032,11 @@ deleteDBAbsence(currentAbsence)
 			"detail",
 			{
 				title : "Job Details",
-				content : [buildDetails(firstJob),buildDetailsTabs()],
+				content : [],
 				showNavButton: true,
 					 
 					 navButtonPress: function() {				                  
-						window.location.reload()
+						 window.location.href="Jobs.html"
 					 }
 			}).addStyleClass("sapUiStdPage");
 
@@ -931,6 +1117,22 @@ function selectListDefault(){
 	  buildDetailsContent(firstJob);
 	  oSplitApp.to("detail");
 }
+function onSuccess(imageData) {
+
+
+	$("#imgPreview"+selectedTab).attr("src", imgdata);
+	}
+
+	function onFail(message) {
+	    alert('Failed because: ' + message);
+	}
+	function takePhoto(){
+		//syncThePhoto(CurrentNotifNo,"xx")
+		//navigator.camera.getPicture(onCamSuccess, onCamFail, {quality:50, destinationType:Camera.DestinationType.FILE_URI});
+
+		navigator.camera.getPicture(onSuccess, onFail, { quality: 50,
+		    destinationType: Camera.DestinationType.FILE_URI});
+	}
 </script>
 </body>
 </html>

@@ -1,0 +1,934 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - TimeSheet</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+
+<script src="myresources/js/buildDetails.js"></script>
+<script src="myresources/js/html5sql.js"></script>  
+<script src="myresources/js/bgsync.js"></script>
+<script src="myresources/js/MyJobsDB.js"></script>
+<script src="myresources/js/MyJobsUtils.js"></script>
+<script type="text/javascript">
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+var currentStatus;
+var firstNotification="";
+var selectedTimesheetDate;
+var EmployeeID = localStorage.getItem("EmployeeID")
+var detailFooter = new sap.m.Bar({
+		id: 'detailFooter',
+		contentRight : [
+						
+						]
+		
+	})
+
+var standardList  = new sap.m.List(
+		  {
+			  //items:standardListItem,
+			  itemPress:[function(oEvt) {		  
+				  buildDetailsContent(oEvt.getParameter("listItem").getId());
+				 
+				  oSplitApp.to("detail")}],
+			  mode:sap.m.ListMode.SingleSelectMaster
+		  });
+	function handleChange(oEvent) {
+		var oDRS = oEvent.oSource;
+		var sFrom = oEvent.getParameter("from");
+		var sTo = oEvent.getParameter("to");
+		var bValid = oEvent.getParameter("valid");
+
+		
+
+		var oText = sap.ui.getCore().byId("TextEvent");
+		//oText.setText("Event " + iEvent + "\nId: " + oEvent.oSource.getId() + "\nFrom: " + sFrom + "\nTo: " + sTo + "\nvalid: " + bValid);
+		if (bValid) {
+			oDRS.setValueState(sap.ui.core.ValueState.None);
+		} else {
+			oDRS.setValueState(sap.ui.core.ValueState.Error);
+		}
+		
+		startDate=sFrom.getFullYear().toString()+zeroFill(sFrom.getMonth()+1)+zeroFill(sFrom.getDate())
+		endDate=sTo.getFullYear().toString()+zeroFill(sTo.getMonth()+1)+zeroFill(sTo.getDate())
+		
+	};
+	
+var firstEntry="none:-1";
+
+var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
+    title:"Create Timesheet Entry",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+					    	createTimesheetEntry(
+									sap.ui.getCore().byId("Job").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Skill").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Activity").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Time").getValue(),
+						
+									sap.ui.getCore().byId("OT15").getValue(),
+									sap.ui.getCore().byId("OT20").getValue());  
+									formNewTimesheetEntry.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formNewTimesheetEntry.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+								
+								
+								new sap.m.Label({text:"Job"}),
+								new sap.m.Select('Job',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "Job1",
+											text: "Job1"
+										}),
+
+										new sap.ui.core.Item({
+											key: "Job2",
+											text: "Job2"
+										}),
+
+										new sap.ui.core.Item({
+											key: "Job3",
+											text: "Job3"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Select('Skill',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "skill1",
+											text: "Skill1"
+										}),
+
+										new sap.ui.core.Item({
+											key: "skill2",
+											text: "Skill2"
+										}),
+
+										new sap.ui.core.Item({
+											key: "skill1",
+											text: "Skill3"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								new sap.m.Select('Activity',{
+									
+									items: [
+										new sap.ui.core.Item({
+											key: "Activity1",
+											text: "Activity 1"
+										}),
+
+										new sap.ui.core.Item({
+											key: "Activity2",
+											text: "Activity 2"
+										}),
+
+										new sap.ui.core.Item({
+											key: "Activity3",
+											text: "Activity 3"
+										})
+									],
+
+									change: function(oControlEvent) {
+										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+									}
+								}),
+								
+								
+								new sap.m.Label({text:"Time"}),
+								new sap.m.Input("Time",{ type: sap.m.InputType.Number}),
+								
+								new sap.m.Label({text:"Overtime at 1.5"}),
+								new sap.m.TextArea("OT15",{ rows: 3}),
+
+
+			
+			new sap.m.Label({text:"Overtime at 2.0"}),
+			new sap.m.Input("OT20",{ type: sap.m.InputType.Input}),								
+				                  
+							]
+ 					})
+
+            ]
+	 })
+var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
+    title:"Create Timesheet",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+							createTimesheetHeader(sap.ui.getCore().byId("NewTimesheetDate").getValue());  
+									formNewTimesheet.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formNewTimesheet.close()} ]   
+					})
+					],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+								
+
+								new sap.m.Label({text: "Date:"}),
+								
+								new sap.m.DateTimeInput('NewTimesheetDate',{
+									width : "99%",
+									type : "Date",
+									displayFormat : "yyyy/MM/dd",
+									dateValue : new Date()
+								})
+							]
+ 					})
+
+            ]
+	 })
+function buildTsheetTabs(){
+	var tabBar  = new sap.m.IconTabBar('tabBar',
+			{
+				expanded:'{device>/isNoPhone}',
+
+				select:[function(oEvt) {		  
+					  if(oEvt.getParameters().key=="Summary"){oDetailPage.setFooter(null)}
+					  if(oEvt.getParameters().key=="Sun"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Mon"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Tue"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Wed"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Thu"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Fri"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Sat"){oDetailPage.setFooter(tconfFooter)}
+					}
+				],
+				
+				items: [
+
+     	               new sap.m.IconTabFilter( 'Summary',{
+    	                   key:'Summary',
+    	                   text:'Summary',
+    	                   tooltip: 'Summary',
+       	                   content:[
+    								new sap.m.Table("SummaryTable",{
+    									
+    									columns:[
+    									        
+    									         new sap.m.Column({header: new sap.m.Label({text:"Type"}),
+    									        	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: true}),
+    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+    									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),										
+    									         new sap.m.Column({header: new sap.m.Label({text:"Sun"}),
+    									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+       									         new sap.m.Column({header: new sap.m.Label({text:"Mon"}),
+       									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+       									         new sap.m.Column({header: new sap.m.Label({text:"Tue"}),
+       									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+          									     new sap.m.Column({header: new sap.m.Label({text:"Wed"}),
+          									     	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+        									     new sap.m.Column({header: new sap.m.Label({text:"Thur"}),
+        									         hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+           									     new sap.m.Column({header: new sap.m.Label({text:"Fri"}),
+           									     	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+      									         new sap.m.Column({header: new sap.m.Label({text:"Sat"}),
+   									        	 	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: true })       	                         
+    							           	     ]
+    									})
+
+									]
+				    			}),
+		    			new sap.m.IconTabFilter( 'Sun',{
+	    	                   key:'Sun',
+	    	                   text:'Sun',
+	    	                   tooltip: 'Sunday',
+	       	                   content:[
+	    								new sap.m.Table("SunTable",{
+	    									columns:[
+	    									        
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+	    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+	    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+	    							           	     ]
+	    									})
+										]
+					    			}),
+	     	               new sap.m.IconTabFilter( 'Mon',{
+	    	                   key:'Mon',
+	    	                   text:'Mon',
+	    	                   tooltip: 'Monday',
+	       	                   content:[
+	    								new sap.m.Table("MonTable",{
+	    									columns:[
+	    									        
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+	    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+	    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+	    							           	     ]
+	    									})
+										]
+					    			}),
+	     	               new sap.m.IconTabFilter( 'Tue',{
+	    	                   key:'Tue',
+	    	                   text:'Tue',
+	    	                   tooltip: 'Tuesday',
+	       	                   content:[
+	    								new sap.m.Table("TueTable",{
+	    									columns:[
+	    									        
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+	    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+	    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+	    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+	    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+	    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+	    							           	     ]
+	    									})
+										]
+					    			}),
+		     	               new sap.m.IconTabFilter( 'Wed',{
+		    	                   key:'Wed',
+		    	                   text:'Wed',
+		    	                   tooltip: 'Wednesday',
+		       	                   content:[
+		    								new sap.m.Table("WedTable",{
+		    									columns:[
+		    									        
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+		    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+		    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+		    							           	     ]
+		    									})
+											]
+						    			}),     	                
+		     	               new sap.m.IconTabFilter( 'Thu',{
+		    	                   key:'Thu',
+		    	                   text:'Thu',
+		    	                   tooltip: 'Thursday',
+		       	                   content:[
+		    								new sap.m.Table("ThuTable",{
+		    									columns:[
+		    									        
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+		    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+		    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+		    							           	     ]
+		    									})
+											]
+						    			}),
+		     	               new sap.m.IconTabFilter( 'Fri',{
+		    	                   key:'Fri',
+		    	                   text:'Fri',
+		    	                   tooltip: 'Friday',
+		       	                   content:[
+		    								new sap.m.Table("FriTable",{
+		    									columns:[
+		    									        
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+		    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+		    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+		    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+		    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+		    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+		    							           	     ]
+		    									})
+											]
+						    			}),
+			     	               new sap.m.IconTabFilter( 'Sat',{
+			    	                   key:'Sat',
+			    	                   text:'Sat',
+			    	                   tooltip: 'Saturday',
+			       	                   content:[
+			    								new sap.m.Table("SatTable",{
+			    									columns:[
+			    									        
+			    									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+			    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+			    									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+			    									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+			    									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+			    									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+			    									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+			    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),										
+			    									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+			    									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+			    									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+			    									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+			    							           	     ]
+			    									})
+												]
+							    			}), 				    
+
+			            	                
+       	                ]
+
+
+			});
+	buildSummary()
+	return tabBar;
+
+	}
+function buildTimeSheets(){
+var item;	
+var lStatus="";
+var StatusState="";
+var StatusIcon="";
+var firstTsheet="";
+	SQLStatement="SELECT * from tsdata where activity='header'"
+html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+
+			cnt = 0;
+			while (cnt<rowsArray.length){
+				item=rowsArray[cnt];
+				if(cnt==0){
+					firstTsheet="tsheet:"+item.id
+				}
+				
+				if (item.activity=="SUBMITTED"){
+					StatusState="Error"
+				}else{
+					StatusState="Success"
+				}
+				 
+				standardList.addItem(
+						  new sap.m.ObjectListItem("tsheet:"+item.id,
+							  {
+						  title:formatDate(item.date),
+						 
+						  type:sap.m.ListType.Active,
+					
+						
+						    firstStatus: [
+						                new sap.m.ObjectStatus( {
+						                    text: item.activity,
+						                    state:StatusState
+						                })
+						                ]
+					
+							  })
+						  );
+					  cnt++;
+			 }
+			oMasterPage.destroyContent()
+			oMasterPage.addContent(standardList);
+			buildDetailsContent(firstTsheet)
+		 },
+		 function(error, statement){
+			 alert(error+statement)
+		 }        
+		);	
+cnt = 0;
+
+
+
+
+}
+function buildDetails(){
+	
+		var objectHeader  = new sap.m.ObjectHeader('HEADER',
+{
+			
+	title:"",
+	number:'',
+	numberUnit:'',
+	           
+	            	    firstStatus: [
+	            	                new sap.m.ObjectStatus( 'State',{
+	            	                  
+	            	                   
+	            	                })
+	            	                ]
+
+});
+
+
+return objectHeader;
+
+}
+
+
+
+function buildDetailsContent(aid){
+
+var res = aid.split(":")
+var tsheet=res[1];
+
+var StatusState="Success";
+var StatusIcon="";
+var Status="";
+
+SQLStatement="SELECT * from tsdata where id = '"+tsheet+"'"
+
+html5sql.process(SQLStatement,
+	 function(transaction, results, rowsArray){
+
+		 if (rowsArray.length>0){
+			 if(rowsArray[0].activity=="SUBMITTED"){
+				 StatusState="ERROR"
+				 Status="Submitted"
+			 }else{
+				 StatusState="Success"
+				 Status="Local"				 
+			 }
+			 
+			 sap.ui.getCore().getElementById('HEADER').setTitle(formatDate(rowsArray[0].date))
+			 selectedTimesheetDate=rowsArray[0].date;
+			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
+			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
+					text : Status,
+					
+
+					state : StatusState
+			 }))
+			
+			  
+
+			 
+		 }
+		
+		 html5sql.process("SELECT * FROM tsdata where activity != 'header' and date = '"+selectedTimesheetDate+"' ;",
+				 function(transaction, results, rowsArray){
+			 
+					var n = 0;
+					var opTable = sap.ui.getCore().getElementById('TsheetTable');
+					opTable.removeAllItems();
+					while (n < rowsArray.length) {
+						
+				
+						opTable.addItem (new sap.m.ColumnListItem({
+							cells : 
+								[
+					            new sap.m.Text({text: rowsArray[n].job}),
+								new sap.m.Text({text: rowsArray[n].skill}),			    
+								new sap.m.Text({text: rowsArray[n].activity}),
+					            new sap.m.Text({text: rowsArray[n].time}),
+					            new sap.m.Text({text: rowsArray[n].ot15}),
+					            new sap.m.Text({text: rowsArray[n].ot20})   
+						 		]
+							}));
+						n++;
+					 }
+
+				 },
+				 function(error, statement){
+					 alert("error"+statement) 
+				 }        
+				);	
+	 },
+	 function(error, statement){
+		 //outputLogToDB(); 
+	 }        
+	);	
+
+ 
+
+
+
+
+
+
+
+
+}
+function buildSummary(){
+
+	
+
+						var opTable = sap.ui.getCore().getElementById('SummaryTable');
+						opTable.removeAllItems();
+					
+							
+					
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Productive"}),
+									new sap.m.Text({text: "Normal"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Productive"}),
+									new sap.m.Text({text: "OT 1.5"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));						
+
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Productive"}),
+									new sap.m.Text({text: "OT 2.0"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+	 
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Non-Prod"}),
+									new sap.m.Text({text: "Normal"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Non-Prod"}),
+									new sap.m.Text({text: "OT 1.5"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));						
+
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Non-Prod"}),
+									new sap.m.Text({text: "OT 2.0"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Total"}),
+									new sap.m.Text({text: "Normal"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Total"}),
+									new sap.m.Text({text: "OT 1.5"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));						
+
+							opTable.addItem (new sap.m.ColumnListItem({
+								cells : 
+									[
+						            new sap.m.Text({text: "Total"}),
+									new sap.m.Text({text: "OT 2.0"}),			    
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"}),
+									new sap.m.Text({text: "0"})
+							 		]
+								}));
+
+
+
+
+
+	}
+function createTimesheetHeader(d){
+	var x =d.split("/")
+	
+	var tsdate= new Date(Number(x[2])+2000,x[0],x[1])
+	
+
+	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()).toString() ) +  zeroFill1(tsdate.getDate().toString());
+	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+								  '"'+TimesheetDate+'",'+
+								  '"",'+
+								  '"",'+
+								  '"header",'+
+								  '"",'+
+								  '"",'+
+								  '"");'
+
+			
+
+			html5sql.process(SQLStatement,
+				 function(transaction, results, rowsArray){
+
+					
+				 },
+				 function(error, statement){
+					alert("Failed Created TS Entry"+statement)
+				 }        
+				);
+	}
+function createTimesheetEntry(job,skill,activity,time,ot15,ot20){
+	
+
+	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+								  '"'+selectedTimesheetDate+'",'+
+								  '"'+job+'",'+
+								  '"'+skill+'",'+
+								  '"'+activity+'",'+
+								  '"'+time+'",'+
+								  '"'+ot15+'",'+
+								  '"'+ot20+'");'
+
+			
+
+			html5sql.process(SQLStatement,
+				 function(transaction, results, rowsArray){
+				 
+				
+				 },
+				 function(error, statement){
+					alert("Failed Created TS Entry")
+				 }        
+				);
+	}
+function buildDetailsTable(){
+	
+       
+     	     var TsheetData=          
+								new sap.m.Table("TsheetTable",{
+									columns:[
+									        
+									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
+									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
+									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
+									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+										
+									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+							           	     ]
+								})
+			
+	return TsheetData;
+
+	}
+
+
+
+
+
+	var oDetailPage = new sap.m.Page(
+			"detail",
+			{
+				title : "Entries",
+				content : [buildDetails(),buildTsheetTabs()],
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer',
+
+							contentRight : [
+									new sap.m.Button("AddNewTimeSheet", {
+					   					 text: "create",
+					   					 icon: "sap-icon://create-entry-time",
+					  					 press: [ function(){
+					  						formNewTimesheetEntry.open(); 
+					  						
+					  							}]
+										 })
+								]
+						}),
+				showNavButton: true,
+					 
+					 navButtonPress: function() {				                  
+						window.location.reload()
+					 }
+			}).addStyleClass("sapUiStdPage");
+
+
+	//create first master page
+
+	var oMasterPage = new sap.m.Page(
+			"master",
+			{
+				 headerContent : new sap.m.Button({
+                     icon: "sap-icon://home",
+                     press : function() {
+                    	 window.location.href="Home.html"
+                     }
+}),
+				title : "Timesheets",
+				
+				content : [ buildTimeSheets()],
+				showNavButton: "{device>/isPhone}" ,
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer1',
+
+							contentLeft : [
+									new sap.m.Button("AddNewTimeSheetEntry", {
+					   					 text: "create",
+					   					 icon: "sap-icon://create",
+					  					 press: [ function(){
+					  						formNewTimesheet.open(); 
+					  						
+					  							}]
+										 })
+								]
+						})			 
+
+			});
+	
+	
+	
+	
+	//create SplitApp()
+	var oSplitApp = new sap.m.SplitApp({
+		detailPages: [oDetailPage],
+		masterPages: [oMasterPage],
+		initialDetail: "detail",
+		initialMaster: "master",
+		afterMasterOpen: function(){
+			jQuery.sap.log.info("master is opened");
+		},
+		afterMasterClose: function(){
+			jQuery.sap.log.info("master is closed");
+		}
+	});
+
+	if(jQuery.device.is.tablet || jQuery.device.is.desktop){
+		oSplitApp.setDefaultTransitionNameDetail("fade");	
+	}
+
+	oSplitApp.placeAt("body");
+</script>
+</head>
+<body id="body" class="sapUiBody">
+</body>
+</html>

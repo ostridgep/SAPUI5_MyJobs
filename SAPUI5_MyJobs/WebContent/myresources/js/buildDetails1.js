@@ -4,7 +4,7 @@ var currentType='';
 	
 
 
-	function buildDetails(type){
+	function buildDetails1(type){
      			var objectHeader  = new sap.m.ObjectHeader('HEADER',
 			{
 				title:"",
@@ -43,7 +43,7 @@ var currentType='';
 	
 
 
-function buildDetailsContent(aid,type){
+function buildDetailsContentx(aid,type){
 	
 	var res = aid.split(":")
 	var id=res[1];

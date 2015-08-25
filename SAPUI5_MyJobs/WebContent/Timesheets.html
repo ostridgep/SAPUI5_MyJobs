@@ -69,10 +69,9 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 					new sap.m.Button( {
 					    text: "Save",
 					    tap: [ function(oEvt) {		  
-					    	createTimesheetEntry(selectedTimesheetDate,
+					    	createTimesheetEntry(
 									sap.ui.getCore().byId("Job").getSelectedItem().getKey(),
-									sap.ui.getCore().byId("Skill").getSelectedItem().getKey(),
-									sap.ui.getCore().byId("Activity").getSelectedItem().getKey(),
+
 									sap.ui.getCore().byId("Time").getValue(),
 						
 									sap.ui.getCore().byId("OT15").getValue(),
@@ -112,52 +111,6 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 										new sap.ui.core.Item({
 											key: "Job3",
 											text: "Job3"
-										})
-									],
-
-									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
-									}
-								}),
-								new sap.m.Select('Skill',{
-									
-									items: [
-										new sap.ui.core.Item({
-											key: "skill1",
-											text: "Skill1"
-										}),
-
-										new sap.ui.core.Item({
-											key: "skill2",
-											text: "Skill2"
-										}),
-
-										new sap.ui.core.Item({
-											key: "skill1",
-											text: "Skill3"
-										})
-									],
-
-									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
-									}
-								}),
-								new sap.m.Select('Activity',{
-									
-									items: [
-										new sap.ui.core.Item({
-											key: "Activity1",
-											text: "Activity 1"
-										}),
-
-										new sap.ui.core.Item({
-											key: "Activity2",
-											text: "Activity 2"
-										}),
-
-										new sap.ui.core.Item({
-											key: "Activity3",
-											text: "Activity 3"
 										})
 									],
 
@@ -249,7 +202,7 @@ html5sql.process(SQLStatement,
 				standardList.addItem(
 						  new sap.m.ObjectListItem("tsheet:"+item.id,
 							  {
-						  title:item.date,
+						  title:formatDate(item.date),
 						 
 						  type:sap.m.ListType.Active,
 					
@@ -309,9 +262,9 @@ function buildDetailsContent(aid){
 var res = aid.split(":")
 var tsheet=res[1];
 
-var StatusState="";
+var StatusState="Success";
 var StatusIcon="";
-var Status
+var Status="";
 
 SQLStatement="SELECT * from tsdata where id = '"+tsheet+"'"
 
@@ -321,13 +274,17 @@ html5sql.process(SQLStatement,
 		 if (rowsArray.length>0){
 			 if(rowsArray[0].activity=="SUBMITTED"){
 				 StatusState="ERROR"
+				 Status="Submitted"
+			 }else{
+				 StatusState="Success"
+				 Status="Local"				 
 			 }
 			 
-			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].date)
+			 sap.ui.getCore().getElementById('HEADER').setTitle(formatDate(rowsArray[0].date))
 			 selectedTimesheetDate=rowsArray[0].date;
 			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
-					text : rowsArray[0].activity,
+					text : Status,
 					
 
 					state : StatusState
@@ -338,10 +295,11 @@ html5sql.process(SQLStatement,
 			 
 		 }
 		
-		 html5sql.process("SELECT * FROM tsdata where activity <> 'header' date = '"+selectedTimesheetDate+"' ;",
+		 html5sql.process("SELECT * FROM tsdata where activity != 'header' and date = '"+selectedTimesheetDate+"' ;",
 				 function(transaction, results, rowsArray){
+			 
 					var n = 0;
-					var opTable = sap.ui.getCore().getElementById('ActivitiesTable');
+					var opTable = sap.ui.getCore().getElementById('TsheetTable');
 					opTable.removeAllItems();
 					while (n < rowsArray.length) {
 						
@@ -349,10 +307,8 @@ html5sql.process(SQLStatement,
 						opTable.addItem (new sap.m.ColumnListItem({
 							cells : 
 								[
-								new sap.m.Text({text: rowsArray[n].date}),
 					            new sap.m.Text({text: rowsArray[n].job}),
-								new sap.m.Text({text: rowsArray[n].skill}),			    
-								new sap.m.Text({text: rowsArray[n].activity}),
+
 					            new sap.m.Text({text: rowsArray[n].time}),
 					            new sap.m.Text({text: rowsArray[n].ot15}),
 					            new sap.m.Text({text: rowsArray[n].ot20})   
@@ -363,7 +319,7 @@ html5sql.process(SQLStatement,
 
 				 },
 				 function(error, statement){
-					 //outputLogToDB(); 
+					 alert("error"+statement) 
 				 }        
 				);	
 	 },
@@ -388,7 +344,7 @@ function createTimesheetHeader(d){
 	var tsdate= new Date(Number(x[2])+2000,x[0],x[1])
 	
 
-	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()+1).toString() ) +  zeroFill1(tsdate.getDate().toString());
+	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()).toString() ) +  zeroFill1(tsdate.getDate().toString());
 	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
 								  '"'+TimesheetDate+'",'+
 								  '"",'+
@@ -410,14 +366,13 @@ function createTimesheetHeader(d){
 				 }        
 				);
 	}
-function createTimesheetEntry(job,skill,activity,time,ot15,ot20){
+function createTimesheetEntry(job,time,ot15,ot20){
 	
 
-	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+	SQLStatement='INSERT INTO TSData ( date , activity, time, ot15, ot20) VALUES ( '+ 
 								  '"'+selectedTimesheetDate+'",'+
 								  '"'+job+'",'+
-								  '"'+skill+'",'+
-								  '"'+activity+'",'+
+								  
 								  '"'+time+'",'+
 								  '"'+ot15+'",'+
 								  '"'+ot20+'");'
@@ -440,21 +395,17 @@ function buildDetailsTable(){
      	     var TsheetData=          
 								new sap.m.Table("TsheetTable",{
 									columns:[
-									         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
-									        	 hAlign: 'Left',width: '16%', minScreenWidth : "" , demandPopin: false}),
+									        
 									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
-									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
-									         new sap.m.Column({header: new sap.m.Label({text:"Skill"}),
-									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
-									         new sap.m.Column({header: new sap.m.Label({text:"Activity"}),
-									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true}),
+									        	 hAlign: 'Left',width: '55%',minScreenWidth : "" , demandPopin: true}),
+									        
 									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
-									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
 										
 									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
-									        	 hAlign: 'Left',width: '13%', minScreenWidth : "" , demandPopin: false}),
+									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
 									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
-									        	 hAlign: 'Left',width: '13%',minScreenWidth : "" , demandPopin: true })       	                         
+									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true })       	                         
 							           	     ]
 								})
 			
@@ -478,6 +429,7 @@ function buildDetailsTable(){
 							contentRight : [
 									new sap.m.Button("AddNewTimeSheet", {
 					   					 text: "create",
+					   					 icon: "sap-icon://create-entry-time",
 					  					 press: [ function(){
 					  						formNewTimesheetEntry.open(); 
 					  						
@@ -515,6 +467,7 @@ function buildDetailsTable(){
 							contentLeft : [
 									new sap.m.Button("AddNewTimeSheetEntry", {
 					   					 text: "create",
+					   					 icon: "sap-icon://create",
 					  					 press: [ function(){
 					  						formNewTimesheet.open(); 
 					  						

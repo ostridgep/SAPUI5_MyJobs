@@ -152,9 +152,12 @@ var formConfig = new sap.m.Dialog("dlgConfig",{
  })
 function loadLastSyncValues(){
 	sap.ui.getCore().getElementById('lastSyncServer').setValue(localStorage.getItem('ServerName'))
-	sap.ui.getCore().getElementById('lastSyncReferenceData').setValue(localStorage.getItem('LastSyncReference'))
-	sap.ui.getCore().getElementById('lastSyncTransactionalData').setValue(localStorage.getItem('LastSyncTransactional'))
-	sap.ui.getCore().getElementById('lastSyncUploadData').setValue(localStorage.getItem('LastSyncUpload'))
+	sap.ui.getCore().getElementById('RefDate').setText("Reference: "+formatDateTime(localStorage.getItem('LastSyncReference')))
+	sap.ui.getCore().getElementById('TrxDate').setText("Transactional: "+formatDateTime(localStorage.getItem('LastSyncTransactional')))
+	sap.ui.getCore().getElementById('UplDate').setText("Upload: "+formatDateTime(localStorage.getItem('LastSyncUpload')))
+	sap.ui.getCore().getElementById('lastSyncReferenceData').setValue(localStorage.getItem('LastSyncReferenceDetails'))
+	sap.ui.getCore().getElementById('lastSyncTransactionalData').setValue(localStorage.getItem('LastSyncTransactionalDetails'))
+	sap.ui.getCore().getElementById('lastSyncUploadData').setValue(localStorage.getItem('LastSyncUploadDetails'))
 	if(localStorage.getItem('Trace')=="ON"){
 		sap.ui.getCore().getElementById('lastSyncLogState').setState(true)
 	}else{
@@ -185,12 +188,12 @@ var formLastSync = new sap.m.Dialog("dlgLastSync",{
 							
 			                new sap.m.Label({text:"Server"}),
 							new sap.m.Input("lastSyncServer",{type: sap.m.InputType.Input, enabled: false}),
-							new sap.m.Label({text:"Reference Data"}),
-							new sap.m.Input("lastSyncReferenceData",{type: sap.m.InputType.Input, enabled: false}),
-					        new sap.m.Label({text:"Sync Transactional Data"}),
-							new sap.m.Input("lastSyncTransactionalData",{type: sap.m.InputType.Input, enabled: false}),
-							new sap.m.Label({text:"Sync Upload Data"}),
-							new sap.m.Input("lastSyncUploadData",{type: sap.m.InputType.Input, enabled: false}),
+							new sap.m.Label("RefDate",{text:"Reference Data"}),
+							new sap.m.TextArea("lastSyncReferenceData",{enabled: false}),
+					        new sap.m.Label("TrxDate",{text:"Sync Transactional Data"}),
+							new sap.m.TextArea("lastSyncTransactionalData",{enabled: false}),
+							new sap.m.Label("UplDate",{text:"Sync Upload Data"}),
+							new sap.m.TextArea("lastSyncUploadData",{enabled: false}),
 							new sap.m.Label({text:"Logging"}),
 							new sap.m.Switch('lastSyncLogState',{
 								state: true,
@@ -214,6 +217,7 @@ var formLastSync = new sap.m.Dialog("dlgLastSync",{
 	sap.ui.getCore().getElementById('synchroniseUpload').setSelected(false)
 	
 }
+
 function forceTheSync()
 {
 
@@ -412,7 +416,7 @@ function loadSettings(){
 
 function setCounts()
 {
-
+	 sap.ui.getCore().byId("LastSyncMess").setText(formatDateTime(localStorage.getItem("LastSyncedDT")));
 	html5sql.process("SELECT * FROM MyOperations left join myoperationssplit on myoperations.orderno = myoperationssplit.orderno and myoperations.opno = myoperationssplit.opno where myoperationssplit.assignedto ='"+EmployeeID+"'",
 	 function(transaction, results, rowsArray){
 			sap.ui.getCore().byId("JobsCnt").setNumber(rowsArray.length);
@@ -422,7 +426,30 @@ function setCounts()
 			 function(transaction, results, rowsArray){
 				
 				sap.ui.getCore().byId("NotifsCnt").setNumber(rowsArray.length);
-				
+				html5sql.process("SELECT * FROM MyMessages  ",
+						 
+						 function(transaction, results, rowsArray){
+							
+							sap.ui.getCore().byId("Team").setNumber(rowsArray.length);
+							html5sql.process("SELECT * from tsdata where activity='header'  ",
+									 
+									 function(transaction, results, rowsArray){
+										
+										sap.ui.getCore().byId("Timesheets").setNumber(rowsArray.length);
+										
+
+										
+									 },
+									 function(error, statement){
+											alert("err"+error)
+									 });      
+
+
+							
+						 },
+						 function(error, statement){
+								alert("err"+error)
+						 });      
 
 				
 			 },
@@ -497,7 +524,14 @@ var page  = new sap.m.Page('homePage',{
 				       						}]
 				       			 })
 					],
-			contentMiddle: [],
+			contentMiddle: [new sap.m.Button("LastSyncMess", {
+      			 text:"",
+      			 icon:"sap-icon://synchronize",
+      				 press: [ function(){
+      					loadLastSyncValues();
+      					 sap.ui.getCore().byId("dlgLastSync").open(); ;
+      						}]
+      			 })],
 			contentLeft : [
 					]
 			}),
@@ -528,13 +562,13 @@ function startBGSync()
          w = new Worker("myresources/js/bgsync.js");
       }
       // Update timer div with output from Web Worker
-      w.onmessage = function (event) {      
+      w.onmessage = function (event) {   
+    	
 		 syncReference()
 		 syncTransactional()
 		 syncUpload()
 		 syncDT=localStorage.getItem('LastSyncedDT')		 
-		 showMessage("Last Synced: "+syncDT.substring(0,4)+"-"+syncDT.substring(4,6)+"-"+syncDT.substring(6,8)+" "+syncDT.substring(8,10)+":"+syncDT.substring(10,12))
-		
+		 sap.ui.getCore().byId("LastSyncMess").setText(formatDateTime(localStorage.getItem("LastSyncedDT")));
 
 		 };
    } else {
