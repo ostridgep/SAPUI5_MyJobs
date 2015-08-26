@@ -2229,7 +2229,7 @@ sqlstatement = 	'DELETE FROM equipments;'
 	
 		sqlstatement+='INSERT INTO Equipments (eqid , description , flid  ) VALUES ('+ 
 			'"'+Equipment.equipment[cntx].id.replace(/^0+/, '') +'",'+ 
-			'"'+unescape(Equipment.equipment[cntx].shorttext) +'",'+  
+			'"'+Equipment.equipment[cntx].shorttext +'",'+  
 			'"'+Equipment.equipment[cntx].funcloc+'");';	
 
 
