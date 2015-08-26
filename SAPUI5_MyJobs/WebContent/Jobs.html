@@ -1274,8 +1274,8 @@ function selectListDefault(){
 }
 function onSuccess(imageData) {
 
-alert("#imgPreview"+selectedTab+"-->"+imgdata)
-	$("#imgPreview"+selectedTab).attr("src", imgdata);
+alert("#imgPreview"+selectedTab+"-->"+imageData)
+	$("#imgPreview"+selectedTab).attr("src", imageData);
 	}
 
 	function onFail(message) {
@@ -1313,7 +1313,7 @@ html5sql.process(sqlstatement,
 				fid=rowsArray[n].flid.split("-")
 				flocList.addItem (new sap.m.StandardListItem(rowsArray[n].flid,{	
 					type: liType,
-					select: handleListSelect,
+					
 					
 					title : fid[fidpos]+" : "+unescape(rowsArray[n].description)}))
 					
