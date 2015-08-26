@@ -1,0 +1,328 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>MyJobs - Vehicle Check</title>
+<script src="resources/sap-ui-core.js" type="text/javascript"
+	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	data-sap-ui-theme="sap_bluecrystal">
+	
+</script>
+
+<script src="myresources/js/html5sql.js"></script>  
+
+  
+
+
+<script type="text/javascript">
+
+var vehicleList = new sap.m.List("vehicleList",{
+	
+	 itemPress:[function(oEvt) {
+		 sap.ui.getCore().getElementById('Description').setValue(oEvt.getParameter("listItem").getTitle())
+		 sap.ui.getCore().getElementById('Reg').setValue(oEvt.getParameter("listItem").getId())
+		 formSelectVehicle.close() 
+}]
+		  });
+var formSelectVehicle = new sap.m.Dialog("dlgSelectVehicle",{
+    title:"",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  
+							 
+					    	formSelectVehicle.close()} ]   
+					})
+					],					
+    content:[
+new sap.m.Label({text:"Registration"}),
+new sap.m.SearchField("SearchReg",{
+	tooltip: "Search for vehicles..",
+	
+	search: [function(event){
+		buildVehicleList(event.getParameter("query"))
+		
+	}]}),	
+vehicleList
+            ]
+	 })
+
+
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+
+var formDefect = new sap.m.Dialog("dlgDefect",{
+    title:"",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+	       		new sap.m.Button( {
+	       			 
+	       			 icon:"sap-icon://save",
+	       			type: 	sap.m.ButtonType.Accept,
+	       				 press: [ function(){
+	       					formDefect.close();
+	       				
+	       						}]
+	       			 }),
+	       		new sap.m.Button( {
+	       			 
+	       			 icon:"sap-icon://sys-cancel",
+	       				type: 	sap.m.ButtonType.Reject,
+	       				 press: [ function(){
+	       					formDefect.close();
+	       				
+	       						}]
+	       			 })	       			 
+				],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+			
+				maxContainerCols : 2,
+				content : 	[							
+			                new sap.m.Label({text:"Description"}),
+							new sap.m.Input("User",{type: sap.m.InputType.Input}),
+							new sap.m.Label({text:"Comments"}),
+							new sap.m.TextArea({rows: 5}),
+							
+							
+
+							]
+ 				})
+            ]
+ })
+
+var page  = new sap.m.Page('VehicleCheck',{
+	title:"Vehicle Check",  
+
+	footer:
+	    new sap.m.Bar (
+			{
+
+			contentLeft : [
+				new sap.m.Button({
+						 
+						 icon:"sap-icon://close-command-field",
+						 text:"Logoff",
+						 type: 	sap.m.ButtonType.Reject,
+							 press: [ function(){
+								
+								 window.location.href="index.html"
+									}]
+						 }),
+								       		
+					],
+				
+			contentRight : [
+
+				new sap.m.Button({
+						 
+						 icon:"sap-icon://save",
+						 text:"Save",
+						 type: 	sap.m.ButtonType.Accept,
+							 press: [ function(){
+								
+								 window.location.href="Home.html"
+									}]
+						 }),
+					]
+		
+	}),
+
+    content: 	
+    	[
+       	 new sap.ui.layout.form.SimpleForm('vCheck:',{
+   			maxContainerCols: 2,
+  			editable: true,
+  			content: [
+					new sap.m.Label({text:"Vehicle Rgistration"}),
+					new sap.m.Input("Reg",{type: sap.m.InputType.Text, enabled:false}),
+					new sap.m.Button( {
+					    text: "Change Vehicle",
+					    icon:"sap-icon://edit",
+					    type: 	sap.m.ButtonType.Accept,
+					    tap: [ function(oEvt) {		  
+					    	
+					    	formSelectVehicle.open()
+							  } ]
+					}),
+					new sap.m.Label({text:"Description"}),
+					new sap.m.Input("Description",{type: sap.m.InputType.Text, enabled:false}),
+					new sap.m.Label({text:"Mileage"}),
+					new sap.m.Input("Mileage",{type: sap.m.InputType.Number}),
+					new sap.m.Label({text:"Tax/MOT/Service displayed in Date:"}),
+					new sap.m.Switch('Tax',{
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(1)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					}),
+					new sap.m.Label({text:"Is the Horn Working"}),
+					new sap.m.Switch('Horn',{
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(2)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					}),
+
+					new sap.m.Label({text:"Do the tyres meet company requirements"}),
+					new sap.m.Switch('Tyres',{
+						tooltip:"Check the depth, cuts/bulges/damage, visual inflation daily, check pressures weekly",
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(3)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					}),
+
+					new sap.m.Label({text:"Wheels secure and nut indicators aligned"}),
+					new sap.m.Switch('Wheels',{
+						tooltip:"Check the wheel nuts and wheel nut indicator alignment if fitted",
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(4)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					}),
+
+					new sap.m.Label({text:"Are all lights clean and working"}),
+					new sap.m.Switch('Lights',{
+						tooltip:"Check headlights, sidelights, brake and reversing lights, indicators and hazard warning",
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(5)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					}),
+					new sap.m.Label({text:"Are the windscreen wipers/washers working"}),
+					new sap.m.Switch('Windscreen',{
+						tooltip:"Check headlights, sidelights, brake and reversing lights, indicators and hazard warning",
+						state: true,
+						change:[function(evt){
+							if(!this.getState())
+								{
+								PrepDefect(6)
+								formDefect.open();
+								}
+						}],
+						type: sap.m.SwitchType.AcceptReject
+					})
+  			
+  			]
+  		
+   		 })
+		],
+    enableScrolling:true,showNavButton: "{device>/isPhone}" });
+
+var app = new sap.m.App();
+
+app.setInitialPage(page.getId());	
+	
+
+
+page.placeAt("body");
+$(function() {
+	formSelectVehicle.addStyleClass("sapUiSizeCompact")
+	sap.ui.getCore().getElementById('Reg').setValue(localStorage.getItem("VehicleReg"))
+	html5sql.process("select * from myvehicles where reg = '"+localStorage.getItem("VehicleReg")+"'",	
+			 function(transaction, results, rowsArray){
+			
+				
+
+				
+				if (rowsArray.length>0) {
+
+					sap.ui.getCore().getElementById('Description').setValue(rowsArray[0].description)
+					
+				 }
+				
+			 },
+			 function(error, statement){
+				 //outputLogToDB(); 
+			 }        
+			);
+
+	});
+</script>
+</head>
+<body id="body" class="sapUiBody">
+
+
+<script>
+function PrepDefect(n){
+	
+	if(n==1){
+		formDefect.setTitle("Defect: Tax/MOT/Service displayed in Date")
+	}else if(n==2){
+		formDefect.setTitle("Defect: Is the Horn Working")
+	}else if(n==3){
+		formDefect.setTitle("Defect: Do the tyres meet company requirements")
+	}else if(n==4){
+		formDefect.setTitle("Defect: Wheels secure and nut indicators aligned")
+	}else if(n==5){
+		formDefect.setTitle("Defect: Are all lights clean and working")
+	}else if(n==6){
+		formDefect.setTitle("Defect: Are the windscreen wipers/washers working")
+	}
+}
+function buildVehicleList(reg)
+{
+
+
+var sqlstatement = "select * from myvehicles where reg LIKE '"+reg+"%'"
+vehicleList.destroyItems();
+
+
+
+html5sql.process(sqlstatement,
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			
+
+			
+			while (n < rowsArray.length) {
+
+				
+				vehicleList.addItem (new sap.m.StandardListItem(rowsArray[n].reg,{	
+					type: sap.m.ListType.Active,					
+					title : rowsArray[n].reg+" : "+rowsArray[n].description}))
+					
+				
+				n++;
+			 }
+			
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);
+}
+
+</script>
+</body>
+
+</html>

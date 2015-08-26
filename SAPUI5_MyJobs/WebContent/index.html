@@ -22,8 +22,9 @@ var pw=sap.ui.getCore().getElementById("Password").getValue()
 	html5sql.process("SELECT * from MyUserDets where user = '"+user+"' and password =  '"+pw+"'",
 	 function(transaction, results, rowsArray){
 			if( rowsArray.length > 0) {
-				localStorage.setItem("EmployeeID",rowsArray[0].employeeid)		
-				SetLocalStorageChangePage('Home.html')
+				localStorage.setItem("EmployeeID",rowsArray[0].employeeid)	
+				localStorage.setItem("VehicleReg",rowsArray[0].vehiclereg)	
+				SetLocalStorageChangePage('VehicleCheck.html')
 						
 
 			}else{

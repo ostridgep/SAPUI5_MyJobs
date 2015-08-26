@@ -2140,6 +2140,10 @@ function refflocsCB(Funcloc){
 			}else{
 				localStorage.setItem('LastSyncTransactionalDetails',localStorage.getItem('LastSyncTransactionalDetails')+'Funcloc:'+String(Funcloc.funcloc.length));
 			}
+sqlstatement = 	'DELETE FROM funclocs;'
+
+
+		
 	for(var cntx=0; cntx < Funcloc.funcloc.length ; cntx++)
 		{	
 		fllevel=((Funcloc.funcloc[cntx].id).match(/-/g) || []).length;
@@ -2178,6 +2182,7 @@ function refflocsCB(Funcloc){
 			
 
 		}
+alert(sqlstatement);
 		html5sql.process(sqlstatement,
 			 function(){
 			opMessage("Flocs inserted and now we do the Parent ID bit");
