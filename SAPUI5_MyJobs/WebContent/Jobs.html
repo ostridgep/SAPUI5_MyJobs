@@ -1339,7 +1339,8 @@ function Scan(){
 	            //"Format: " + result.format + "\n" + 
 	            //"Cancelled: " + result.cancelled);  
 
-	            $("#Equipment").val(result.text);
+	          
+	            sap.ui.getCore().getElementById("NewEquipment").setValue(result.text);
 	           // alert(result);
 
 
