@@ -800,6 +800,7 @@ var SAPServerSuffix="";
 							requestSAPData("MyJobsUsers.htm",SAPServerSuffix);
 							requestSAPData("MyJobsVehicles.htm",SAPServerSuffix);
 							requestSAPData("MyJobsFunclocs.htm",SAPServerSuffix);
+							requestSAPData("MyJobsEquipment.htm",SAPServerSuffix);
 						 }
 						 
 					},
@@ -1128,6 +1129,8 @@ function createTables(type) {
 					 'CREATE TABLE IF NOT EXISTS SurveySubQuestion  	( id integer primary key autoincrement, surveyid TEXT, groupid TEXT, questionid TEXT, subquestionid TEXT, subquestiontype TEXT, name TEXT, title TEXT, dependsonid TEXT, dependsonval TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS SurveyQuestionChildren ( id integer primary key autoincrement, surveyid TEXT, groupid TEXT, questionid TEXT, questionvalue TEXT, childquestions TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS FuncLocs			  	( id integer primary key autoincrement, flid TEXT, description TEXT, swerk TEXT, level TEXT, parentid TEXT, children TEXT);'+
+					 'CREATE TABLE IF NOT EXISTS Equipments			  	( id integer primary key autoincrement, eqid TEXT, description TEXT, flid TEXT);'+
+						
 					 'CREATE TABLE IF NOT EXISTS TSActivities		    ( id integer primary key autoincrement, code TEXT, skill TEXT,  subskill TEXT, description TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS TSNPJobs			    ( id integer primary key autoincrement, jobno TEXT, subtype TEXT,  description TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS TSData		    		( id integer primary key autoincrement, date TEXT, job TEXT, skill TEXT, activity TEXT, time TEXT, ot15 TEXT, ot20 TEXT);'+
@@ -1207,6 +1210,7 @@ function dropTables() {
 						'DROP TABLE IF EXISTS SurveySubQuestion;'+
 						'DROP TABLE IF EXISTS SurveyQuestionChildren;'+
 						'DROP TABLE IF EXISTS FuncLocs;'+
+						'DROP TABLE IF EXISTS Equipments;'+
 						'DROP TABLE IF EXISTS TSActivities;'+	
 						'DROP TABLE IF EXISTS TSNPJobs;'+
 						'DROP TABLE IF EXISTS TSData;'+
@@ -1277,6 +1281,7 @@ function emptyTables(type) {
 						'DELETE FROM  SurveySubQuestion;'+
 						'DELETE FROM  SurveyQuestionChildren;'+
 						'DELETE FROM  FuncLocs;'+
+						'DELETE FROM  Equipments;'+
 						'DELETE FROM  TSActivities;'+	
 						'DELETE FROM  TSNPJobs;'+
 						'DELETE FROM  TSData;'+
@@ -1383,6 +1388,7 @@ function resetTables() {
 					'DELETE FROM  SurveySubQuestion;'+
 					'DELETE FROM  SurveyQuestionChildren;'+
 					'DELETE FROM  FuncLocs;'+
+					'DELETE FROM  Equipments;'+
 					'DELETE FROM  TSActivities;'+	
 					'DELETE FROM  TSNPJobs;'+
 					'DELETE FROM  TSData;'+
@@ -2182,7 +2188,7 @@ sqlstatement = 	'DELETE FROM funclocs;'
 			
 
 		}
-alert(sqlstatement);
+
 		html5sql.process(sqlstatement,
 			 function(){
 			opMessage("Flocs inserted and now we do the Parent ID bit");
@@ -2202,7 +2208,54 @@ alert(sqlstatement);
 
 	
 }
+function refequipsCB(Equipment){
+	
 
+	var sqlstatement="";
+
+	opMessage("Loading "+Equipment.equipment.length+" Reference Equipment Locations");
+			if(syncTransactionalDetsUpdated){
+				localStorage.setItem('LastSyncTransactionalDetails',localStorage.getItem('LastSyncTransactionalDetails')+', Equipment:'+String(Equipment.equipment.length));
+			}else{
+				localStorage.setItem('LastSyncTransactionalDetails',localStorage.getItem('LastSyncTransactionalDetails')+'Equipment:'+String(Equipment.equipment.length));
+			}
+sqlstatement = 	'DELETE FROM equipments;'
+
+
+		
+	for(var cntx=0; cntx < Equipment.equipment.length ; cntx++)
+		{	
+
+	
+		sqlstatement+='INSERT INTO Equipments (eqid , description , flid  ) VALUES ('+ 
+			'"'+Equipment.equipment[cntx].id.replace(/^0+/, '') +'",'+ 
+			'"'+unescape(Equipment.equipment[cntx].shorttext) +'",'+  
+			'"'+Equipment.equipment[cntx].funcloc+'");';	
+
+
+			
+
+		}
+
+		html5sql.process(sqlstatement,
+			 function(){
+			opMessage("New Equipment List inserted ");
+			
+					},
+					
+			 function(error, statement){
+				 opMessage("Error: " + error.message + " when processing " + statement);
+			 }        
+		);	
+
+
+
+
+
+
+
+	
+}
 function refgasCB(Survey){
 
 
