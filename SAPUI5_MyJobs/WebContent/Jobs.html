@@ -1272,20 +1272,18 @@ function selectListDefault(){
 	  buildDetailsContent(firstJob);
 	  oSplitApp.to("detail");
 }
-function onSuccess(imageData) {
+function onCamSuccess(imageData) {
 
-alert("#imgPreview"+selectedTab+"-->"+imageData)
+
 	$("#imgPreview"+selectedTab).attr("src", imageData);
 	}
 
-	function onFail(message) {
+	function onCamFail(message) {
 	    alert('Failed because: ' + message);
 	}
 	function takePhoto(){
-		alert("Taking the Photo")
-		navigator.camera.getPicture(onSuccess, onFail, { quality: 50,
-		    destinationType: Camera.DestinationType.DATA_URL});
-
+	
+		navigator.camera.getPicture(onCamSuccess, onCamFail, {quality:50, destinationType:Camera.DestinationType.FILE_URI});
 
 	}
 
