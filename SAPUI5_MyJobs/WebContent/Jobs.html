@@ -48,7 +48,14 @@ var MapJob=getURLParameters("MapJob");
 MapJob1=MapJob+":"
 MapJobPar=MapJob1.split(":")
 var selectedListItem=0;
-
+var newEQField = 			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input,
+	 icon:"images//barcode.png",
+	 showValueHelp: true,
+	valueHelpRequest: [function(event){
+		Scan()
+	
+}]});
+newEQField._getValueHelpIcon().setSrc("sap-icon://bar-code");
 var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
     title:"Create Notification",
     modal: true,
@@ -83,70 +90,33 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 								new sap.m.Select('NewType',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "M1 Notification"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "M2 Notification"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "M3 - Notification"
-										})
+										
 									],
 
 									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+										
+										BuildPriorities(oControlEvent.getParameter("selectedItem").getKey());
 									}
 								}),
-								new sap.m.Select('NewSource',{
+								new sap.m.Select('NewGroup',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "General"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "Hardware"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "Software"
-										})
+										
 									],
 
 									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+										BuildCodes(oControlEvent.getParameter("selectedItem").getKey());
+										
 									}
 								}),
-								new sap.m.Select('Code',{
+								new sap.m.Select('NewCode',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "Code 1"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "Code 2"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "Code 3"
-										})
+										
 									],
 
 									change: function(oControlEvent) {
-										jQuery.sap.log.info("Event fired: 'change' value property to " + oControlEvent.getParameter("selectedItem") + " on " + this);
+										
 									}
 								}),
 								
@@ -154,20 +124,7 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 								new sap.m.Select('NewPriority',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "Red"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "Amber"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "Green"
-										})
+										
 									],
 
 									change: function(oControlEvent) {
@@ -202,13 +159,7 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 			
 			new sap.m.Label({text:"Equipment",
 				}),
-			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input,
-				 icon:"images//barcode.png",
-				 showValueHelp: true,
-				valueHelpRequest: [function(event){
-					Scan()
-				
-			}]}),								
+				newEQField,								
                   
 							]
  					})
@@ -1310,7 +1261,7 @@ $(function() {
 		selectListDefault() 
         }  
 		
-	
+	BuildNotificationTypes()
 	
 	});
 function selectListDefault(){
@@ -1402,6 +1353,135 @@ function Scan(){
 	        } );
 	    }
 	}
+function BuildNotificationTypes(){
+
+	var HTMLToOutput='';
+
+	var SQLStatement="";
+	var FirstVal="";
+	SQLStatement="SELECT MyRefNotifTypes.type , MyRefNotifTypes.description, MyRefNotifTypes.priority_type, profile from MyRefNotifTypes "
+	SQLStatement+="join RefNotifprofile on MyRefNotifTypes.type = RefNotifprofile.notif_type "
+	SQLStatement+="where MyRefNotifTypes.scenario = 'MAMDEMOLG'"
+	
+		html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+				//alert(rowsArray.length)
+				for (var n = 0; n < rowsArray.length; n++) {
+					item = rowsArray[n];
+					sap.ui.getCore().getElementById("NewType").addItem(
+							new sap.ui.core.Item({
+								key: item.type+"|"+item.priority_type+"|"+item.profile, 
+								text: item.description
+							}))
+					
+				}
+					
+				
+		 },
+		 function(error, statement){
+			
+		 }        
+		);
+
+	}
+	
+	function BuildPriorities(selectedId){
+		
+var x = selectedId.split("|")
+var priority_type = x[1];
+var profile=x[2];
+	var HTMLToOutput='';
+
+	var SQLStatement="";
+	var FirstVal="";
+	SQLStatement="SELECT priority , description "
+	SQLStatement+="from MyRefPriorityTypes "
+	SQLStatement+="where scenario = 'MAMDEMO' and type = '"+priority_type+"'"
+	var HTMLToOutput="";
+		html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+			
+			sap.ui.getCore().getElementById("NewPriority").destroyItems();
+			
+				for (var n = 0; n < rowsArray.length; n++) {
+					item = rowsArray[n];
+					sap.ui.getCore().getElementById("NewPriority").addItem(
+							new sap.ui.core.Item({
+								key: item.priority,
+								text: item.description
+							}))
+				}
+			BuildGroups(profile)
+				
+		 },
+		 function(error, statement){
+			
+		 }        
+		);
+
+	}
+	function BuildGroups(profile){
+
+
+
+		var SQLStatement="";
+		var FirstVal="";
+		SQLStatement="SELECT *  "
+		SQLStatement+="from RefCodeGroups "
+		SQLStatement+="where scenario = 'MAMDEMO' and catalog_type = 'X' and profile = '"+profile+"'"
+		var HTMLToOutput="";
+			html5sql.process(SQLStatement,
+			 function(transaction, results, rowsArray){
+
+					sap.ui.getCore().getElementById("NewGroup").destroyItems();
+					
+					for (var n = 0; n < rowsArray.length; n++) {
+						item = rowsArray[n];
+						sap.ui.getCore().getElementById("NewGroup").addItem(
+								new sap.ui.core.Item({
+									key: profile+"|"+item.code_cat_group,
+									text: item.codegroup_text
+								}))
+					}
+					
+			 },
+			 function(error, statement){
+				
+			 }        
+			);
+
+		}
+	function BuildCodes(Group){
+
+		var HTMLToOutput='';
+
+		var SQLStatement="";
+		var res = Group.split("|")
+		
+		SQLStatement="SELECT *  "
+		SQLStatement+="from RefCodes "
+		SQLStatement+="where scenario = 'MAMDEMO' and profile = '"+res[0]+"' and code_cat_group = '"+res[1]+"'"
+		var HTMLToOutput="";
+			html5sql.process(SQLStatement,
+			 function(transaction, results, rowsArray){
+
+					sap.ui.getCore().getElementById("NewCode").destroyItems();
+					
+					for (var n = 0; n < rowsArray.length; n++) {
+						item = rowsArray[n];
+						sap.ui.getCore().getElementById("NewCode").addItem(
+								new sap.ui.core.Item({
+									key: item.code,
+									text: item.code_text
+								}))
+					}
+			 },
+			 function(error, statement){
+				
+			 }        
+			);
+
+		}
 </script>
 </body>
 </html>
