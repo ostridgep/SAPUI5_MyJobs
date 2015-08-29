@@ -166,7 +166,12 @@ var formMessage = new sap.m.Dialog("dlgMessage",{
 
 var detailFooter = new sap.m.Bar({
 	id: 'detailFooter',
-
+contentLeft: new sap.m.Button({
+		
+		icon: "sap-icon://home",
+		press : function(){ window.location.href="Home.html"}
+		
+	}),
 					contentMiddle : [
 									new sap.m.Button("Create", {
 										 text: "Create Message",
@@ -183,12 +188,7 @@ var page  = new sap.m.Page('MyTeam',{
 	title:"My Team",  
 
 
-	headerContent: new sap.m.Button({
-		
-		icon: "sap-icon://home",
-		press : function(){ window.location.href="Home.html"}
-		
-	}),
+	
 footer:detailFooter,
 
     content: 	
@@ -304,7 +304,7 @@ footer:detailFooter,
 	                   icon: "sap-icon://account",
 	                   content:[
 								sap.ui.core.HTML({
-									content:	"<div id='TeamMap' class='gmap'  style='height: 400px;'>Google Maps</div>"
+									content:	"<div id='TeamMap' class='gmap'  style='height: 400px; width=95%;'>Google Maps</div>"
 								})
 								]
 	                })			            	                
