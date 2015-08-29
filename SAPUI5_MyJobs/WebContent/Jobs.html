@@ -4,21 +4,33 @@
 <meta http-equiv="Access-Control-Allow-Origin" content="*"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <title>MyJobs - Jobs</title>
+
 <script src="resources/sap-ui-core.js" type="text/javascript"
 	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
 	data-sap-ui-theme="sap_bluecrystal">
 	
 </script>
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
 
-<script src="myresources/js/buildDetails.js"></script>
 <script src="myresources/js/html5sql.js"></script>  
 <script src="myresources/js/bgsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
-<script type="text/javascript" src="cordova.js"></script>
-<script type="text/javascript" src="barcodescanner.js"></script>
+
+
 <script type="text/javascript">
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+var map,
+jobLat,
+jobLon,
+currentLat,
+currentLon,
+currentPosition,
+directionsDisplay, 
+directionsService;
+directionsDisplay = new google.maps.DirectionsRenderer(); 
+directionsService = new google.maps.DirectionsService();   
+
 var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
 var selectedFloc;
 
@@ -48,6 +60,20 @@ var MapJob=getURLParameters("MapJob");
 MapJob1=MapJob+":"
 MapJobPar=MapJob1.split(":")
 var selectedListItem=0;
+var Locs = [
+            {
+                lat: 45.4654,
+                lon: 9.1866,
+                title: 'Start',
+                html: '<h3>Start</h3>'
+            },
+            {
+        		lat: 45.4654,
+                lon: 9.1866,
+        		title: 'Finish',
+                html: '<h3>Finish</h3>'
+            }
+        ];
 var newEQField = 			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input,
 	 icon:"images//barcode.png",
 	 showValueHelp: true,
@@ -166,6 +192,111 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 
             ]
 	 })
+var formMap = new sap.m.Dialog("dlgMap",{
+    title:"Location",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+new sap.m.Button( {
+    text: "Route",
+    icon:"sap-icon://map-3",
+    type: sap.m.ButtonType.Accept,
+    tap: [ function(oEvt) {		  
+    	formMap.close()
+		formRoute.open();
+    	} ]   
+}),
+
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formMap.close()} ]   
+					}),
+					
+					],					
+    content:[
+
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+    	  formMap.addContent(new 		sap.ui.core.HTML({
+			content: ' <div id="map_canvas" style="height:350px;"></div>'
+
+
+		}))
+
+      },
+      afterOpen:function(){  
+    	  initialize(jobLat, jobLon);
+    	  document.getElementById('map_canvas').style.height=document.getElementById("dlgMap").offsetHeight-130+"px";
+	  } ,
+	  beforeClose:function(){
+		  formMap.destroyContent();
+	  }
+	
+	 })
+var formRoute = new sap.m.Dialog("dlgRoute",{
+    title:"Route",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+
+					new sap.m.Button( {
+					    text: "Map",
+					    icon:"sap-icon://map",
+					    type: sap.m.ButtonType.Accept,
+					    tap: [ function(oEvt) {		  
+					    	formRoute.close()
+							formMap.open();
+					    	} ]   
+					}),
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formRoute.close()} ]   
+					}),
+					
+					],					
+    content:
+    	[
+ 		
+ 		],
+            contentWidth:"95%",
+            contentHeight: "95%",
+     beforeOpen:function(){
+    	 formRoute.addContent(new sap.ui.core.HTML({
+       			//content: "<div  align='center'> <div id='gmap-route'></div><div id='route'></div><div id='controls'></div></div>"
+    		 content: ' <div id="route_canvas" style="height:350px;"></div>'
+       		}))
+            },
+
+      beforeClose:function(){
+      		  formRoute.destroyContent();
+      	  },
+      afterOpen:function(){
+    	 calculateRoute();
+    	document.getElementById('route_canvas').style.height=document.getElementById("dlgRoute").offsetHeight-200+"px"
+
+
+    		
+
+      }      
+	 })	
 var formSelectFloc = new sap.m.Dialog("dlgSelectFloc",{
     title:"",
     modal: true,
@@ -187,13 +318,23 @@ var formSelectFloc = new sap.m.Dialog("dlgSelectFloc",{
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
 		contentLeft : [
-						new sap.m.Button("showMap", {
+						new sap.m.Button({
 							 text: "Map",
 							 icon:"sap-icon://map",
 							 press: [ function(){
-								 window.location.href="Map.html?PostCode="+currentPostcode+"&Job="+currentJob;
+								 formMap.open();
+
 									}]
-						 })
+						 }),
+							new sap.m.Button({
+								 text: "Route",
+								 icon:"sap-icon://map-3",
+								 press: [ function(){
+									 navigator.geolocation.getCurrentPosition(getDestinationDetails); 
+									 formRoute.open();
+
+										}]
+							 })
 						],
 						contentRight : [
 										new sap.m.Button("changeStatus", {
@@ -209,10 +350,20 @@ var detailFooter = new sap.m.Bar({
 	})
 var tconfFooter = new sap.m.Bar({
 	id: 'tconfFooter',
+	contentLeft : [
+					new sap.m.Button({
+						 text: "Map",
+						 icon:"sap-icon://map",
+						 press: [ function(){
+							 formMap.open();
+
+								}]
+					 })
+					],
 	contentMiddle : [
 					new sap.m.Button("tconfFooterCreateTconf", {
 						 text: "Create",
-						 icon: "create-time-entry",
+						 icon: "sap-icon://create-entry-time",
 						 press: [ function(){
 							 
 							 formTimeConf.open();
@@ -222,7 +373,7 @@ var tconfFooter = new sap.m.Bar({
 	contentRight : [
 					new sap.m.Button("tconfFooterChangeStatus", {
 						 text: "Status",
-						 //icon: sap.ui.core.IconPool.getIconURI("edit"),
+						 icon:"sap-icon://edit",
 						 press: [ function(){
 							 prepareChangeStatus();
 							 formChangeStatus.open();
@@ -698,7 +849,7 @@ return objectHeader;
 
 
 
-function buildDetailsContent(aid){
+function  buildDetailsContent(aid){
 
 var res = aid.split(":")
 var orderno=res[1];
@@ -766,6 +917,7 @@ html5sql.process(SQLStatement,
 					state : StatusState
 			 }))
 			 				 currentPostcode=rowsArray[0].postcode;
+			 getLatLonFromPcode(currentPostcode)
 			 currentJob="job:"+rowsArray[0].orderno+':'+rowsArray[0].opno;
 			 currentStatus=rowsArray[0].opstat;
 			 if(currentStatus=="Job Finished"){
@@ -792,6 +944,7 @@ html5sql.process(SQLStatement,
 			  sap.ui.getCore().getElementById('Equipment').setText(rowsArray[0].equipment)	
 			  Longtext=rowsArray[0].orderlongtext	
 
+	    	 
 			 
 		 }
 			
@@ -817,11 +970,16 @@ html5sql.process(SQLStatement,
 				 }        
 				);
 		 }else{
-			 
+			
 			 oDetailPage.addContent(buildDetailsTabs())
+			 	$(".gllpLatlonPicker").each(function() {
+			(new GMapsLatLonPicker()).init( $(this) );
+			});	
+			
 			  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
 
 			 buildDetailsTabContent(orderno,opno)
+
 		 }
 		 
 			
@@ -849,20 +1007,19 @@ function buildDetailsTabs(){
 
 				select:[function(oEvt) {	
 					
-					  if(oEvt.getParameters().key=="Status"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="Task"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Assets"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="MPoint"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Partners"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="TConf"){oDetailPage.setFooter(tconfFooter)}
 					}
 				],
 				
 				items: [
 
-     	               new sap.m.IconTabFilter( 'OBJECTS',{
-    	                   key:'Assets',
-    	                   tooltip: 'Assets',
-    	                   icon: "sap-icon://machine",
+new sap.m.IconTabFilter( 'OBJECTS',{
+    key:'Assets',
+    tooltip: 'Assets',
+    icon: "sap-icon://machine",
        	                   content:[
 								new sap.m.Table("AssetsTable",{
 									columns:[
@@ -1174,6 +1331,7 @@ html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and op
 		 }        
 		);	
 
+
 }
 
 function deleteAbsence()
@@ -1187,6 +1345,7 @@ deleteDBAbsence(currentAbsence)
 			{
 				title : "Job Details",
 				content : [],
+				footer: detailFooter,
 				showNavButton: true,
 					 
 					 navButtonPress: function() {				                  
@@ -1256,6 +1415,8 @@ deleteDBAbsence(currentAbsence)
 <body id="body" class="sapUiBody">
 <script>
 $(function() {
+
+
 	
 	oSplitApp.onAfterRendering = function() {  
 		selectListDefault() 
@@ -1478,6 +1639,103 @@ var profile=x[2];
 			);
 
 		}
+
+	function getDestinationDetails(currentLatLon)
+	{
+		Locs[0]['lat']=currentLatLon.coords.latitude;
+		Locs[0]['lon']=currentLatLon.coords.longitude;
+		
+	
+		formRoute.open()
+		//window.location.href='Route.html?PostCode='+PostCode+'&Job='+Job+'&SLat='+Start_lat+'&SLon='+Start_lon+'&ELat='+End_lat+'&ELon='+End_lon
+	    
+	    
+	}
+    function initialize(lat, lon)
+    {
+        
+
+        currentPosition = new google.maps.LatLng(lat, lon);
+
+        map = new google.maps.Map(document.getElementById('map_canvas'), {
+           zoom: 15,
+           center: currentPosition,
+           mapTypeId: google.maps.MapTypeId.ROADMAP
+         });
+
+       // directionsDisplay.setMap(map);
+
+         var currentPositionMarker = new google.maps.Marker({
+            position: currentPosition,
+            map: map,
+            title: "Current position"
+        });
+
+        var infowindow = new google.maps.InfoWindow();
+        google.maps.event.addListener(currentPositionMarker, 'click', function() {
+            infowindow.setContent("Current position: latitude: " + lat +" longitude: " + lon);
+            infowindow.open(map, currentPositionMarker);
+        });
+    }
+
+    function locError(error) {
+        // initialize map with a static predefined latitude, longitude
+       initialize(59.3426606750, 18.0736160278);
+    }
+
+    function locSuccess(position) {
+        initialize(position.coords.latitude, position.coords.longitude);
+    }
+
+    function calculateRoute() {
+    	 
+
+        var targetDestination = new google.maps.LatLng(jobLat, jobLon);
+        var currentPosition = new google.maps.LatLng(currentLat, currentLon);
+
+            var request = {
+                origin:currentPosition, 
+                destination:targetDestination,
+                travelMode: google.maps.DirectionsTravelMode["DRIVING"]
+            };
+
+            directionsService.route(request, function(response, status) {
+                if (status == google.maps.DirectionsStatus.OK) {
+                    directionsDisplay.setPanel(document.getElementById("route_canvas"));
+                    directionsDisplay.setDirections(response); 
+
+
+                }
+                else {
+                	
+                }
+            });
+
+    }
+
+    function locationHandler(position)
+	 {
+	   currentLat = position.coords.latitude;
+	   currentLon = position.coords.longitude;
+	 }
+    function getLatLonFromPcode(address) {
+    	navigator.geolocation.getCurrentPosition(locationHandler);
+
+    	
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode({'address': address+" , UK"}, function postcodesearch(results, status) 
+    {   
+      if (status == google.maps.GeocoderStatus.OK) 
+      {
+        jobLat=results[0].geometry.location.lat()
+        jobLon=results[0].geometry.location.lng()
+      }
+      else {
+       
+      }
+
+    })
+    };
 
 </script>
 </body>

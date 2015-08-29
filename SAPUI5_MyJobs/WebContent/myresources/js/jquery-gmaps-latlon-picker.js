@@ -80,6 +80,7 @@ var GMapsLatLonPicker = (function() {
 
 	// search function
     var performSearch = function(string, silent) {
+    
 		if (string == "") {
 			if (!silent) {
 				displayError( _self.params.strings.error_empty_field );
@@ -101,7 +102,28 @@ var GMapsLatLonPicker = (function() {
 			}
 		);
     };
-    
+    function pSearch(string, silent) {
+		if (string == "") {
+			if (!silent) {
+				displayError( _self.params.strings.error_empty_field );
+			}
+			return;
+		}
+		_self.vars.geocoder.geocode(
+			{"address": string},
+			function(results, status) {
+				if (status == google.maps.GeocoderStatus.OK) {
+					$(_self.vars.cssID + ".gllpZoom").val(11);
+					_self.vars.map.setZoom( parseInt($(_self.vars.cssID + ".gllpZoom").val()) );
+					setPosition( results[0].geometry.location );
+				} else {
+					if (!silent) {
+						displayError( _self.params.strings.error_no_results );
+					}
+				}
+			}
+		);
+    };    
     // error function
     var displayError = function(message) {
     	alert(message);
@@ -172,6 +194,7 @@ var GMapsLatLonPicker = (function() {
 
 			// Search function by search button
 			$(_self.vars.cssID + ".gllpSearchButton").bind("click", function() {
+				
 				performSearch( $(_self.vars.cssID + ".gllpSearchField").val(), false );
 			});
 
@@ -185,7 +208,7 @@ var GMapsLatLonPicker = (function() {
 	
 	return publicfunc;
 });
-
+/*
 
 $(document).ready( function() {
 	$(".gllpLatlonPicker").each(function() {
@@ -196,3 +219,4 @@ $(document).ready( function() {
 $(document).bind("location_changed", function(event, object) {
 	console.log("changed: " + $(object).attr('id') );
 });
+*/
