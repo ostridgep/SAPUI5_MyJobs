@@ -1,87 +1,76 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<title>MyJobs - My Team</title>
-
+<title>MyJobs - Team</title>
 <script src="resources/sap-ui-core.js" type="text/javascript"
 	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
 	data-sap-ui-theme="sap_bluecrystal">
 	
 </script>
-
+<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+<script src="myresources/js/buildDetails.js"></script>
 <script src="myresources/js/html5sql.js"></script>  
-<script src="myresources/js/bqsync.js"></script>
+<script src="myresources/js/bgsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
-<script src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
-<script src="myresources/js/jquery-gmaps-latlon-picker.js"></script>
-<script src="myresources/js/maplace-0.1.3.js"></script>
-<style type='text/css'>
-
-  .boxeddiv {border: 1px solid grey;
-      margin: 1em 1em  1em 1em;
-	
-	border-radius: 10px;}
-
-  .boxeddiv1 {border: 1px solid grey;
-      
-border-bottom-right-radius: 10px;
-	border-bottom-left-radius: 10px;}
-  
-  
-  
-  
-  
- .block {
-    border: 1px solid grey;
-    width: 98%;
-    height:800px;
-    display: inline-block;
-    margin: 1em 1em 1em 1em;
-	border-radius: 15px;
-    left:50px
-}
-  .highlight {
-
-     box-shadow: 5px 5px 5px #888888;
-
-  }
-  .gllpLatlonPicker	{ margin: 20px 0; }
-.gllpMap	{  width: 500px; height:500px; }
-
-  </style>
 <script type="text/javascript">
-
-jQuery.sap.require("sap.m.MessageBox");
-
-
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
-//Need to Fetch From Users DMB
-var LocsA = [
-    {
-        lat: 52.5202507,
-        lon: -1.6350539999999683,
-        title: 'Charley Farley',
-        icon: 'images/van1.gif',
-		html: 'Charley Farley'
-    },
-    {
-        lat: 52.45962636383875,
-        lon: -1.7538436728515308,
-        title: 'Slarty Bartfast',
-        icon: 'images/van1.gif',
-		html: 'Slarty Bartfast'
-    },
-    {
-        lat: 52.184308275501834,
-        lon: -2.2125228720702808,
-        title: 'Jimmy Hendrix',
-        icon: 'images/van1.gif',
-		html: 'Jimmy Hendrix'
-    }
-];
-var formCreate = new sap.m.Dialog("dlgCreateMessage",{
+
+var currentStatus;
+var firstNotification="";
+var EmployeeID = localStorage.getItem("EmployeeID")
+var detailFooter = new sap.m.Bar({
+		contentRight : [
+						
+						]
+		
+	})
+var formMap = new sap.m.Dialog("dlgMap",{
+    title:"Location",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+
+
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formMap.close()} ]   
+					}),
+					
+					],					
+    content:[
+
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+    	  formMap.addContent(new 		sap.ui.core.HTML({
+			content: ' <div id="map_canvas" style="height:350px;"></div>'
+
+
+		}))
+
+      },
+      afterOpen:function(){  
+    	  initializeMap();
+    	  document.getElementById('map_canvas').style.height=document.getElementById("dlgMap").offsetHeight-130+"px";
+	  } ,
+	  beforeClose:function(){
+		  formMap.destroyContent();
+	  }
+	
+	 })
+var formNewMessage = new sap.m.Dialog("dlgCreateMessage",{
     title:"Create Message",
     modal: true,
     contentWidth:"1em",
@@ -90,7 +79,7 @@ var formCreate = new sap.m.Dialog("dlgCreateMessage",{
 					    text: "Send",
 					    tap: [ function(oEvt) {		  
 							CreateTheMessage(); 
-							formCreate.close()
+							formNewMessage.close()
 							  } ]
 					   
 					}),   
@@ -98,7 +87,7 @@ var formCreate = new sap.m.Dialog("dlgCreateMessage",{
 					    text: "Cancel",
 					    tap: [ function(oEvt) {		  
 							 
-					    	formCreate.close()} ]   
+					    	formNewMessage.close()} ]   
 					})
 					],					
     content:[
@@ -129,7 +118,7 @@ var formCreate = new sap.m.Dialog("dlgCreateMessage",{
 
             ]
 	 })
-var formMessage = new sap.m.Dialog("dlgMessage",{
+var formViewMessage = new sap.m.Dialog("dlgMessage",{
     title:"Message",
     modal: true,
     contentWidth:"1em",
@@ -139,7 +128,7 @@ var formMessage = new sap.m.Dialog("dlgMessage",{
 					    text: "OK",
 					    tap: [ function(oEvt) {		  
 							 
-					    	formMessage.close()} ]   
+					    	formViewMessage.close()} ]   
 					})
 					],					
     content:[
@@ -163,203 +152,197 @@ var formMessage = new sap.m.Dialog("dlgMessage",{
             ]
 	 })
 
+var messageFooter = new sap.m.Bar (
+		{			
 
-var detailFooter = new sap.m.Bar({
-	id: 'detailFooter',
-contentLeft: new sap.m.Button({
-		
-		icon: "sap-icon://home",
-		press : function(){ window.location.href="Home.html"}
-		
-	}),
-					contentMiddle : [
+				contentMiddle : [
 									new sap.m.Button("Create", {
-										 text: "Create Message",
-										 icon:"sap-icon://create",
-										 press: [ function(){
-											 prepareCreateMessage();
-											 formCreate.open();
-												}]
-									 })
-									]
-	
-})
-var page  = new sap.m.Page('MyTeam',{
-	title:"My Team",  
+					   					text: "Create",
+					   					icon: "sap-icon://email",
+					  					 press: [ function(){
+					  						prepareCreateMessage()
+					  						formNewMessage.open(); 
+					  						
+					  							}]
+										 })
+								]
+		})	
+
+var standardList  = new sap.m.List(
+		  {
+			  //items:standardListItem,
+			  itemPress:[function(oEvt) {		  
+				  buildDetailsContent(oEvt.getParameter("listItem").getId());
+				 
+				  oSplitApp.to("detail")}],
+			  mode:sap.m.ListMode.SingleSelectMaster
+		  });
 
 
-	
-footer:detailFooter,
 
-    content: 	
-    	[
-    	new sap.m.ScrollContainer("sc1", {
-    	horizontal: true,
-    	vertical: true,
-    	content:[
-				new sap.m.IconTabBar('tabBar',
-					{
-					expanded:'{device>/isNoPhone}',
 
-					select:[function(oEvt) {		
-						
-						if(oEvt.getParameters().key=="Team"){
-							
-							new Maplace({
-							    locations: LocsA,
-							    map_div: '#TeamMap',
-							    controls_title: 'Choose Team Member:'
-							}).Load();
-							}
-						}
-						],
+function buildMenu(){
+	var rcvcnt = 0;
+	var sndcnt = 0;
+	var syscnt = 0;
+
+	html5sql.process("SELECT * FROM MyMessages",
+	 function(transaction, results, rowsArray){
 			
-			items: [
+			n=0;
+			while(n < rowsArray.length){
+				if(rowsArray[n].msgfromid == 'SENTMSG'  ){
+					sndcnt++;
+				}else if(rowsArray[n].msgfromid == 'SYSTEM'  ){
+					syscnt++;
+				}else{
+					rcvcnt++;
+				}
+				n++;
+			}
 
- 	               new sap.m.IconTabFilter( 'Receiced',{
-	                   key:'Received',
-	                   tooltip: 'Received Messages',
-	                   icon: "sap-icon://email",
-	                   
-   	                   content:[
-							new sap.m.Table("ReceivedTable",{
-								itemPress:[function(oEvt) {		
-									  
-								     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
-								}
-									  
-									 ],
 
-								columns:[
-								         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
-								        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
-								         new sap.m.Column({header: new sap.m.Label({text:"From"}),
-								        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
-								         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
-								        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
-						           	     ]
-							})
-							]
-			    		}),
-	               new sap.m.IconTabFilter( 'Sent',{
-	                   key:'Sent',
-	                   tooltip: 'Sent Messages',
-	                   icon: "sap-icon://forward",
-   	                   content:[
-							new sap.m.Table("SentTable",{
-								itemPress:[function(oEvt) {		
-								     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
-								     } 
-									 ],
-								  mode:sap.m.ListMode.SingleSelectMaster,
-								columns:[
-								         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
-								        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
-								         new sap.m.Column({header: new sap.m.Label({text:"To"}),
-								        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
-								         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
-								        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
-						           	     ]
-							})
-							]
-			    }),
-	               
-	               new sap.m.IconTabFilter( 'System',{
-	                   key:'System',
-	                   tooltip: 'System Messages',
-	                   icon: "sap-icon://alert",
-   	                   content:[
-							new sap.m.Table("SystemTable",{
-								columns:[
-								         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
-								        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
-								         new sap.m.Column({header: new sap.m.Label({text:"From"}),
-								        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
-								         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
-								        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
-						           	     ]
-							})
-							]
-			    	}),
-			    	new sap.m.IconTabFilter( 'Contacts',{
-		                   key:'Contacts',
-		                   tooltip: 'Team Members',
-		                   icon: "sap-icon://contacts",
-	   	                   content:[
-								new sap.m.Table("ContactsTable",{
-									columns:[
-									         new sap.m.Column({header: new sap.m.Label({text:"ID"}),
-									        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
-									         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
-									        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true}),
-									         new sap.m.Column({header: new sap.m.Label({text:"TelNo"}),
-									        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true })       	                         
-							           	     ]
-								})
-								]
-				    }),
-   	                new sap.m.IconTabFilter( 'Team',{
-	                   key:'Team',
-	                   tooltip: 'Team',
-	                   icon: "sap-icon://account",
-	                   content:[
-								sap.ui.core.HTML({
-									content:	"<div id='TeamMap' class='gmap'  style='height: 400px; width=95%;'>Google Maps</div>"
-								})
-								]
-	                })			            	                
-   	                ] //item
-					}) //tabbar
-				]//content
-    	})
-		],
-    enableScrolling:true,showNavButton: "{device>/isPhone}" });
 
-var app = new sap.m.App();
+			standardList.addItem(
+					  new sap.m.ObjectListItem("ReceivedMessages",
+						  {
+					  title:"Received Messages",
+					  number:rcvcnt, 
+					  tooltip: 'Received Messages',
+			          icon: "sap-icon://email",
+					
+					  type:sap.m.ListType.Active,
 
-app.setInitialPage(page.getId());	
+				
+						  })
+					  );
+			standardList.addItem(
+					  new sap.m.ObjectListItem("SentMessages",
+						  {
+					  title:"Sent Messages",
+					  number:sndcnt, 
+					  tooltip: 'Sent Messages',
+			        icon: "sap-icon://forward",
+					
+					  type:sap.m.ListType.Active,
+
+				
+						  })
+					  );
+			standardList.addItem(
+					  new sap.m.ObjectListItem("SystemMessages",
+						  {
+					  title:"System Messages",
+					  number:syscnt, 
+					  tooltip: 'System Messages',
+			        icon: "sap-icon://alert",
+					
+					  type:sap.m.ListType.Active,
+
+				
+						  })
+					  );
+			standardList.addItem(
+					  new sap.m.ObjectListItem("AddressBook",
+						  {
+					  title:"Address Book",
+					  
+					  tooltip: 'Address Book',
+			      icon: "sap-icon://contacts",
+					
+					  type:sap.m.ListType.Active,
+
+				
+						  })
+					  );
+			standardList.addItem(
+					  new sap.m.ObjectListItem("Team",
+						  {
+					  title:"Team",
+					  
+					  tooltip: 'Team Location',
+			    icon: "sap-icon://account",
+					
+					  type:sap.m.ListType.Active,
+
+				
+						  })
+					  );
+			oMasterPage.addContent(standardList)
+					  
+
+	 },
+	 function(error, statement){
+		
+	 }        
+	);
+
+
+
 	
 
 
-page.placeAt("body");
-$(function() {
-	buildReceived()
-	buildSent()
-	buildSystem()
-	buildContacts()
+
+
+
+}
+
+
+
+
+function buildDetailsContent(type){
 	
+	if(type=="ReceivedMessages"){
+		buildReceived();
+	}else 	if(type=="SentMessages"){
+		buildSent();
+	}else 	if(type=="SystemMessages"){
+		buildSystem();
+	}else 	if(type=="AddressBook"){
+		buildAddressBook();
+	}else 	if(type=="Team"){
+		formMap.open();
+	}
+}
 
+function buildReceived(){	
+	var tableReceived =	new sap.m.Table("ReceivedTable",{
 
-	});
-</script>
-</head>
-<body id="body" class="sapUiBody">
-<script></script>
-</body>
-<script>
+		itemPress:[function(oEvt) {			  
+				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+					}
+			  
+			 ],
 
-function buildReceived(){
+		columns:[
+		         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
+		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+		         new sap.m.Column({header: new sap.m.Label({text:"From"}),
+		        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
+		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
+	      	     ]
+	})
 	html5sql.process("SELECT * FROM MyMessages  ;",
 			 function(transaction, results, rowsArray){
-				var n = 0;
-				var opTable = sap.ui.getCore().getElementById('ReceivedTable');
-				opTable.removeAllItems();
-				while (n < rowsArray.length) {
-					
-			
-					opTable.addItem (new sap.m.ColumnListItem('RECEIVED:'+rowsArray[n].id,{
+				var n = 0;			
+				tableReceived.removeAllItems();
+				while (n < rowsArray.length) {				
+					tableReceived.addItem (new sap.m.ColumnListItem('RECEIVED:'+rowsArray[n].id,{
 						type: "Active",
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
-				            new sap.m.Text({text: rowsArray[n].msgfromname}),
-						
+				            new sap.m.Text({text: rowsArray[n].msgfromname}),						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
 					 		]
 						}))
 					n++;
 				 }
-
+				oDetailPage.destroyContent()
+				oDetailPage.addContent(tableReceived)
+				oDetailPage.setFooter(messageFooter)
+				oDetailPage.setTitle("Received Messages")
 			 },
 			 function(error, statement){
 				 //outputLogToDB(); 
@@ -367,31 +350,43 @@ function buildReceived(){
 			);	
 }
 function buildSent(){
-	html5sql.process("SELECT * FROM MyMessages where msgfromid = 'SENTMSG' ;",
+	var tableSent =	new sap.m.Table("SentTable",{
+
+		itemPress:[function(oEvt) {			  
+				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+					}
+			  
+			 ],
+
+		columns:[
+		         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
+		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+		         new sap.m.Column({header: new sap.m.Label({text:"To"}),
+		        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
+		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
+	      	     ]
+	})
+	html5sql.process("SELECT * FROM MyMessages  where msgfromid = 'SENTMSG'  ;",
 			 function(transaction, results, rowsArray){
-				var n = 0;
-				var opTable = sap.ui.getCore().getElementById('SentTable');
-				sap.ui.getCore().getElementById('SentTable').removeAllItems();
-				
-				while (n < rowsArray.length) {
-					
-			
-					opTable.addItem (new sap.m.ColumnListItem('SENT:'+rowsArray[n].id,{
+				var n = 0;				
+				tableSent.removeAllItems();
+				while (n < rowsArray.length) {			
+					tableSent.addItem(new sap.m.ColumnListItem('SENT:'+rowsArray[n].id,{
 						type: "Active",
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
-				            new sap.m.Text({text: rowsArray[n].msgtoname}),
-						
+				            new sap.m.Text({text: rowsArray[n].msgtoname}),						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
 					 		]
-
 						}))
-
-					
 					n++;
 				 }
-
+				oDetailPage.destroyContent()
+				oDetailPage.addContent(tableSent)
+				oDetailPage.setFooter(messageFooter)
+				oDetailPage.setTitle("Sent Messages")
 			 },
 			 function(error, statement){
 				 //outputLogToDB(); 
@@ -399,59 +394,245 @@ function buildSent(){
 			);	
 }
 function buildSystem(){
-	html5sql.process("SELECT * FROM MyMessages  ;",
+	var tableSystem =	new sap.m.Table("SystemTable",{
+
+		itemPress:[function(oEvt) {			  
+				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+					}
+			  
+			 ],
+
+		columns:[
+		         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
+		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+		         new sap.m.Column({header: new sap.m.Label({text:"From"}),
+		        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Subject"}),
+		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
+	      	     ]
+	})
+	html5sql.process("SELECT * FROM MyMessages  where msgfromid = 'SYSTEM'  ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;
-				var opTable = sap.ui.getCore().getElementById('SystemTable');
-				opTable.removeAllItems();
-				while (n < rowsArray.length) {
-					
-			
-					opTable.addItem (new sap.m.ColumnListItem("SYSTEM"+n,{
+				tableSystem.removeAllItems();
+				while (n < rowsArray.length) {			
+					tableSystem.addItem(new sap.m.ColumnListItem('SYSTEM:'+rowsArray[n].id,{
+						type: "Active",
 						cells : 
 							[
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
-				            new sap.m.Text({text: rowsArray[n].msgfromname}),
-						
+				            new sap.m.Text({text: rowsArray[n].msgfromid}),						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
 					 		]
-						}));
+						}))
 					n++;
 				 }
-
+				oDetailPage.destroyContent()
+				oDetailPage.addContent(tableSystem)	
+				oDetailPage.setFooter(messageFooter)
+				oDetailPage.setTitle("System Messages")
 			 },
 			 function(error, statement){
 				 //outputLogToDB(); 
 			 }        
 			);	
 }
-function buildContacts(){
+function buildAddressBook(){
+	var tableAddressBook =	new sap.m.Table("AddressBookTable",{
+
+		itemPress:[function(oEvt) {			  
+				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
+					}
+			  
+			 ],
+
+		columns:[
+		         new sap.m.Column({header: new sap.m.Label({text:"id"}),
+		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+		        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Telephone"}),
+		        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true })       	                         
+	      	     ]
+	})
 	html5sql.process("SELECT * FROM MyRefUsers  ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;
-				var opTable = sap.ui.getCore().getElementById('ContactsTable');
-				opTable.removeAllItems();
-				while (n < rowsArray.length) {
-					
-			
-					opTable.addItem (new sap.m.ColumnListItem({
+				
+				tableAddressBook.removeAllItems();
+				while (n < rowsArray.length) {			
+					tableAddressBook.addItem(new sap.m.ColumnListItem('ADDRESSBOOK:'+rowsArray[n].id,{
+						type: "Active",
 						cells : 
 							[
-							  new sap.m.Text({text: rowsArray[n].userid}),
-							  new sap.m.Text({text: rowsArray[n].firstname+" "+rowsArray[n].lastname}),
-							  new sap.m.Text({text: rowsArray[n].telno})   
+					        new sap.m.Text({text: rowsArray[n].userid}),
+							new sap.m.Text({text: rowsArray[n].firstname+" "+rowsArray[n].lastname}),					
+				            new sap.m.Text({text: rowsArray[n].telno})   
 					 		]
-
-						}));
+						}))
 					n++;
 				 }
-
+				oDetailPage.destroyContent()
+				oDetailPage.addContent(tableAddressBook)		
+				oDetailPage.setFooter(detailFooter)
+				oDetailPage.setTitle("Address Book")
 			 },
 			 function(error, statement){
 				 //outputLogToDB(); 
 			 }        
 			);	
 }
+function setCounts()
+{
+	var rcvcnt = 0;
+	var sndcnt = 0;
+	var syscnt = 0;
+	sap.ui.getCore().byId("Timesheets").setNumber(rowsArray.length);
+	html5sql.process("SELECT * FROM MyMessages",
+	 function(transaction, results, rowsArray){
+			
+			n=0;
+			while(n < rowsArray.length){
+				if(msgfromid == 'SENTMSG'  ){
+					sndcnt++;
+				}else if(msgfromid == 'SYSTEM'  ){
+					syscnt++;
+				}else{
+					rcvcnt++;
+				}
+				n++;
+			}
+
+			document.getElementById("ReceivedMessages").setNumber(rcvcnt);
+			document.getElementById("SentMessages").setNumber(sndcnt);
+			document.getElementById("SystemMessages").setNumber(syscnt);
+
+
+
+	 },
+	 function(error, statement){
+		 alert("err1"+error)
+	 }        
+	);
+}
+
+function initializeMap() {
+
+   
+    var map = new google.maps.Map(document.getElementById('map_canvas'), {
+        zoom: 9,
+        center: new google.maps.LatLng(52.5202507,
+                -1.6350539999999683),
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    });
+
+    var LocsA = [
+                 [
+                     52.5202507,
+                     -1.6350539999999683,
+                     'Charley Farley',
+                     'images/van1.gif'
+             		
+                 ],
+                 [
+                     52.45962636383875,
+                     -1.7538436728515308,
+                     'Slarty Bartfast',
+                     'images/van1.gif'
+                 ],
+                 [
+                     52.184308275501834,
+                     -2.2125228720702808,
+                     'Jimmy Hendrix',
+                     'images/van1.gif'
+                 ]
+             ];
+
+
+    //declare marker call it 'i'
+    var marker, i;
+
+    //declare infowindow
+    var infowindow = new google.maps.InfoWindow();
+
+    //add marker to each locations
+    for (i = 0; i < LocsA.length; i++) {
+        marker = new google.maps.Marker({
+        	icon: LocsA[i][3],
+            position: new google.maps.LatLng(LocsA[i][0], LocsA[i][1]),
+            map: map,
+        });
+
+        //click function to marker, pops up infowindow
+        google.maps.event.addListener(marker, 'click', (function(marker, i) {
+            return function() {
+                infowindow.setContent(LocsA[i][2]);
+                infowindow.open(map, marker);
+            }
+        })(marker, i));
+    }
+    //google.maps.event.addDomListener(window, 'load', initialize);
+}
+
+function initialize(lat, lon)
+{
+    
+
+    currentPosition = new google.maps.LatLng(lat, lon);
+
+    map = new google.maps.Map(document.getElementById('map_canvas'), {
+       zoom: 15,
+       center: currentPosition,
+       mapTypeId: google.maps.MapTypeId.ROADMAP
+     });
+
+   // directionsDisplay.setMap(map);
+
+     var currentPositionMarker = new google.maps.Marker({
+        position: currentPosition,
+        map: map,
+        title: "Current position"
+    });
+
+    var infowindow = new google.maps.InfoWindow();
+    google.maps.event.addListener(currentPositionMarker, 'click', function() {
+        infowindow.setContent("Current position: latitude: " + lat +" longitude: " + lon);
+        infowindow.open(map, currentPositionMarker);
+    });
+}
+function prepareDisplayMessage(tid){
+	
+	res=tid.split(":")
+	var mtype=res[0]
+	var id = res[1]
+	var	SQLStatement='Select * from MyMessages where id = "'+id+'"'
+
+
+	html5sql.process(SQLStatement,
+	function(transaction, results, rowsArray){
+
+		sap.ui.getCore().getElementById("messageSubject").setValue(rowsArray[0].msgsubject)
+		sap.ui.getCore().getElementById("messageMessage").setValue(unescape(rowsArray[0].msgtext))
+
+		if(mtype=="SENT"){
+			sap.ui.getCore().getElementById("messageType").setText('To')
+			sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgtoname)
+		
+		}else{
+			sap.ui.getCore().getElementById("messageType").setText('From')
+			sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgfromname)
+			
+		}
+		
+	formViewMessage.open()
+	},
+	function(error, statement){		
+
+		
+	}        
+	);
+
+}	
 function prepareCreateMessage(){
 	html5sql.process("SELECT * FROM MyRefUsers  ;",
 			 function(transaction, results, rowsArray){
@@ -506,37 +687,76 @@ function CreateTheMessage()
 			);
 		
 }
-function prepareDisplayMessage(tid){
-res=tid.split(":")
-var mtype=res[0]
-var id = res[1]
-var	SQLStatement='Select * from MyMessages where id = "'+id+'"'
+	var oDetailPage = new sap.m.Page(
+			"detail",
+			{
+				title : "",
+				content : [],
+				showNavButton: true,
+					 
+					 navButtonPress: function() {				                  
+						window.location.reload()
+					 }
+			}).addStyleClass("sapUiStdPage");
 
 
-html5sql.process(SQLStatement,
-function(transaction, results, rowsArray){
+	//create first master page
 
-	sap.ui.getCore().getElementById("messageSubject").setValue(rowsArray[0].msgsubject)
-	sap.ui.getCore().getElementById("messageMessage").setValue(rowsArray[0].msgtext)
+	var oMasterPage = new sap.m.Page(
+			"master",
+			{
+				 headerContent : new sap.m.Button({
+                     icon: "sap-icon://home",
+                     press : function() {
+                    	 window.location.href="Home.html"
+                     }
+}),
+				title : "My Team",
+				
+				content : [
+				          
+				           ],
+				showNavButton: "{device>/isPhone}" ,
+				footer  : new sap.m.Bar (
+						{
+							id : 'master-footer',
 
-	if(mtype=="SENT"){
-		sap.ui.getCore().getElementById("messageType").setText('To')
-		sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgtoname)
+							contentLeft : [
+
+								]
+						})			 
+
+			});
 	
-	}else{
-		sap.ui.getCore().getElementById("messageType").setText('From')
-		sap.ui.getCore().getElementById("messageTo").setValue(rowsArray[0].msgfromname)
-		
+	
+	
+	
+	//create SplitApp()
+	var oSplitApp = new sap.m.SplitApp({
+		detailPages: [oDetailPage],
+		masterPages: [oMasterPage],
+		initialDetail: "detail",
+		initialMaster: "master",
+		afterMasterOpen: function(){
+			jQuery.sap.log.info("master is opened");
+		},
+		afterMasterClose: function(){
+			jQuery.sap.log.info("master is closed");
+		}
+	});
+
+	if(jQuery.device.is.tablet || jQuery.device.is.desktop){
+		oSplitApp.setDefaultTransitionNameDetail("fade");	
 	}
-	
-formMessage.open()
-},
-function(error, statement){		
 
-	
-}        
-);
+	oSplitApp.placeAt("body");
+	$(function() {
+		buildMenu()
+	})
 
-}
+
 </script>
+</head>
+<body id="body" class="sapUiBody">
+</body>
 </html>
