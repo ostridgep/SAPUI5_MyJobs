@@ -33,7 +33,7 @@ directionsService = new google.maps.DirectionsService();
 
 var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
 var selectedFloc;
-
+var formtab=null;
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
 	 itemPress:[function(oEvt) {	
@@ -949,7 +949,14 @@ html5sql.process(SQLStatement,
 		 }
 			
 		 if(JobType.length>3){
-			
+			if(JobType=="FORM"){
+				 oDetailPage.addContent(buildDetailsTabs("FORM"))
+
+					
+				  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
+
+				 buildDetailsTabContent(orderno,opno,"FORM")
+			}else{
 			 html5sql.process("Select * from myitems where notifno = '"+notifno+"'",
 					 function(transaction, results, rowsArray){
 				
@@ -969,16 +976,15 @@ html5sql.process(SQLStatement,
 					 //outputLogToDB(); 
 				 }        
 				);
+			}
 		 }else{
 			
-			 oDetailPage.addContent(buildDetailsTabs())
-			 	$(".gllpLatlonPicker").each(function() {
-			(new GMapsLatLonPicker()).init( $(this) );
-			});	
+			 oDetailPage.addContent(buildDetailsTabs("NORMAL"))
+
 			
 			  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
 
-			 buildDetailsTabContent(orderno,opno)
+			 buildDetailsTabContent(orderno,opno,"NORMAL")
 
 		 }
 		 
@@ -999,8 +1005,142 @@ html5sql.process(SQLStatement,
 
 
 }
+function BuildFormGroups(){
+	
+	var HTMLToOutput='';
+	var HTMLToOutput1='';
+	var SQLStatement="";
+	var SQLStatement1="";
+	var CurrentGroup="";
+	var currentSQ=""
+	var surveyID='124699'
+	SQLStatement="SELECT *  "
+	SQLStatement+="from SurveyGroup "
+	SQLStatement+="where surveyid = '"+surveyID+"'"
+		
+	
+		html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+			
+				for (var n = 0; n < rowsArray.length-1; n++) {
+					
+					item = rowsArray[n];
+					formtab.addContent(
+					new sap.m.Panel('set'+item.groupid, {
+						expandable : true,
+						expanded : false,
+						headerText :  item.name,
+						content : []
+					}))
 
-function buildDetailsTabs(){
+				
+				SQLStatement1="SELECT *  "
+					SQLStatement1+="from SurveyQuestion "
+					SQLStatement1+="where surveyid = '"+surveyID+"' and groupid = '"+item.groupid+"' order by groupid, questionid"	
+
+					html5sql.process(SQLStatement1,
+							 function(transaction, results, rowsArray1){
+									currentGroup=""
+									
+									for (var nq = 0; nq < rowsArray1.length; nq++) {
+										itemq = rowsArray1[nq];
+
+											BuildQuestionField('set'+itemq.groupid,"Q:"+itemq.questionid,itemq.questiontype,itemq.defaultvalue,itemq.title,itemq.dependsonid, itemq.dependsonval)
+
+										
+
+									}
+
+
+							 },
+							 function(error, statement){
+								alert(error)
+							 }        
+							);
+				}
+				SQLStatement1="SELECT sq.groupid, sq.questionid, q.questiontype, sq.subquestionid, sq.subquestiontype, sq.title "
+					SQLStatement1+=" from SurveySubQuestion as sq join SurveyQuestion as q on sq.questionid = q.questionid"
+					SQLStatement1+=" where sq.surveyid = '"+surveyID+"' order by sq.groupid, sq.questionid, sq.subquestionid"	
+
+					html5sql.process(SQLStatement1,
+							 function(transaction, results, rowsArray){
+									currentSQ=""
+									for (var nsq = 0; nsq < rowsArray.length; nsq++) {
+										itemsq = rowsArray[nsq];
+
+											
+											BuildSubQuestionField('set'+itemsq.groupid,itemsq.questiontype,itemsq.subquestionid,itemsq.subquestiontype,itemsq.title)
+	
+
+									}
+
+									
+
+							 },
+							 function(error, statement){
+								alert("Error: " + error.message + " when SetConfigParam processing " + statement)
+							 }        
+							);	 
+		 },
+		 function(error, statement){
+			
+		 }        
+		);
+
+}
+function BuildQuestionField(panelid,id,type, defaultvalue, title,  dependsonid, dependsonval){
+	
+groupPanel=sap.ui.getCore().getElementById(panelid);
+groupPanel.destroyContent()
+groupPanel.addContent(new sap.m.Label({text:title+":"+type}))
+	if(type=='S'){
+		
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+
+
+	}else if (type=="Y"){
+		groupPanel.addContent(new sap.m.Switch(id,{
+			state: true,
+			change:[],
+			type: sap.m.SwitchType.AcceptReject
+		}))
+	}else if (type=="M"){
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+
+	}else if (type=="!"){
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+
+	}else if (type==";"){
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+
+	}else if (type=="Q"){
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+	}else{
+		groupPanel.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
+		}
+
+}
+function BuildSubQuestionField(panelid,qtype,id,type,title){
+
+	groupPanel=sap.ui.getCore().getElementById(panelid);
+	groupPanel.addContent(new sap.m.Label({text:title+":"+qtype}))	
+
+}
+function buildDetailsTabs(Jtype){
+
+	if(Jtype=="FORM"){
+		 formtab=new sap.m.IconTabFilter( 'FORM',{
+	              key:'Form',
+	              tooltip: 'Form',
+	              icon: "sap-icon://form",
+	              content:[
+
+	                       ]
+	           })
+		 
+		 BuildFormGroups()
+	}
+	
 	var tabBar  = new sap.m.IconTabBar('tabBar',
 			{
 				expanded:'{device>/isNoPhone}',
@@ -1015,12 +1155,13 @@ function buildDetailsTabs(){
 				],
 				
 				items: [
-
+formtab,
 new sap.m.IconTabFilter( 'OBJECTS',{
     key:'Assets',
     tooltip: 'Assets',
     icon: "sap-icon://machine",
        	                   content:[
+       	        	               
 								new sap.m.Table("AssetsTable",{
 									columns:[
 									         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
@@ -1241,11 +1382,14 @@ var tabcontentQ;
 			 }        
 			);	
 }
-function buildDetailsTabContent(orderNo,OpNo){
+function buildDetailsTabContent(orderNo,OpNo,Jtype){
 
 
 //Create Status Details
-
+if(Jtype=="Form"){
+	tabcontent = sap.ui.getCore().getElementById('Form');
+	tabContent.addContent(new sap.m.Text({text:"ASDFGHJK"}))
+}
 
 
 //Assets
