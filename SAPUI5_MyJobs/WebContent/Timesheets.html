@@ -112,12 +112,13 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 								new sap.m.Input("Time",{ type: sap.m.InputType.Number}),
 								
 								new sap.m.Label({text:"Overtime at 1.5"}),
-								new sap.m.TextArea("OT15",{ rows: 3}),
+								new sap.m.Input("OT15",{ type: sap.m.InputType.Number}),
+						
 
 
 			
 			new sap.m.Label({text:"Overtime at 2.0"}),
-			new sap.m.Input("OT20",{ type: sap.m.InputType.Input}),								
+			new sap.m.Input("OT20",{ type: sap.m.InputType.Number}),								
 				                  
 							]
  					})
@@ -180,7 +181,7 @@ html5sql.process(SQLStatement,
 			while (cnt<rowsArray.length){
 				item=rowsArray[cnt];
 				if(cnt==0){
-					firstTsheet="tsheet:"+item.id
+					firstTsheet="tsheet:"+item.date
 				}
 				
 				if (item.activity=="SUBMITTED"){
@@ -190,7 +191,7 @@ html5sql.process(SQLStatement,
 				}
 				 
 				standardList.addItem(
-						  new sap.m.ObjectListItem("tsheet:"+item.id,
+						  new sap.m.ObjectListItem("tsheet:"+item.date,
 							  {
 						  title:formatDate(item.date),
 						 
@@ -264,11 +265,15 @@ var P20=0;
 var TTime=0;
 var T15=0;
 var T20=0;
-SQLStatement="SELECT * from tsdata where id = '"+tsheet+"'"
+var opTable=sap.ui.getCore().getElementById('TsheetTable');
+var opTotTable=sap.ui.getCore().getElementById('TsheetTotalTable');
+SQLStatement="SELECT * from tsdata where date = '"+tsheet+"' and activity = 'header'"
 
+opTable.removeAllItems();	
+opTotTable.removeAllItems();	
 html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
-
+		
 		 if (rowsArray.length>0){
 			 if(rowsArray[0].activity=="SUBMITTED"){
 				 StatusState="ERROR"
@@ -292,14 +297,15 @@ html5sql.process(SQLStatement,
 
 			 
 		 }
-		
-		 html5sql.process("SELECT * FROM tsdata where activity != 'header' and date = '"+selectedTimesheetDate+"' ;",
+
+			
+		 html5sql.process("SELECT * FROM tsdata where activity != 'header' and date = '"+tsheet+"' ;",
 				 function(transaction, results, rowsArray){
-			 		
+			 
 					var n = 0;
-					var opTable = sap.ui.getCore().getElementById('TsheetTable');
-					opTable.removeAllItems();
+
 					while (n < rowsArray.length) {
+						
 						if(rowsArray[n].job.substring(0,1)=="U"){
 							NPTime+=parseFloat(rowsArray[n].time);
 							NP15+=parseFloat(rowsArray[n].ot15);
@@ -309,7 +315,7 @@ html5sql.process(SQLStatement,
 							P15+=parseFloat(rowsArray[n].ot15);
 							P20+=parseFloat(rowsArray[n].ot20);
 						}
-				
+						
 						opTable.addItem (new sap.m.ColumnListItem("TSD:"+rowsArray[n].id,{
 							cells : 
 								[
@@ -323,9 +329,8 @@ html5sql.process(SQLStatement,
 						n++;
 					 }
 	
-					opTable = sap.ui.getCore().getElementById('TsheetTotalTable');
-					opTable.removeAllItems();
-					opTable.addItem (new sap.m.ColumnListItem({
+
+					opTotTable.addItem (new sap.m.ColumnListItem({
 						cells : 
 							[
 				            new sap.m.Text({text: "Productive"}),
@@ -335,7 +340,7 @@ html5sql.process(SQLStatement,
 				            new sap.m.Text({text: P20.toFixed(2)})   
 					 		]
 						}));
-					opTable.addItem (new sap.m.ColumnListItem({
+					opTotTable.addItem (new sap.m.ColumnListItem({
 						cells : 
 							[
 				            new sap.m.Text({text: "Non Productive"}),
@@ -345,7 +350,7 @@ html5sql.process(SQLStatement,
 				            new sap.m.Text({text: NP20.toFixed(2)})   
 					 		]
 						}));
-					opTable.addItem (new sap.m.ColumnListItem({
+					opTotTable.addItem (new sap.m.ColumnListItem({
 						cells : 
 							[
 				            new sap.m.Text({text: "Total"}),
