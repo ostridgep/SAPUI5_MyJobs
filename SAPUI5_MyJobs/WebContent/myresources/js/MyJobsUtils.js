@@ -53,6 +53,12 @@ var formatteddt="";
 formatteddt=dt.substring(6,8)+"-"+dt.substring(4,6)+"-"+dt.substring(0,4)+" "+dt.substring(8,10)+":"+dt.substring(10,12)+":"+dt.substring(12,14);
 return formatteddt;
 }
+function formatDateTime1(dt){
+
+	var formatteddt="";
+	formatteddt=dt.substring(6,8)+"-"+dt.substring(4,6)+"-"+dt.substring(0,4)+" "+dt.substring(9,11)+":"+dt.substring(11,13)+":"+dt.substring(13,15);
+	return formatteddt;
+	}
 function zeroFill1(x){
     return (x < 10) ? ("0" + x) : x;   
 }

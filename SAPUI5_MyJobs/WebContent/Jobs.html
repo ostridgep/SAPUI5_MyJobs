@@ -16,7 +16,11 @@
 <script src="myresources/js/bgsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
+<style>
+.formHdr {
+				font-weight: bold;
 
+			}</style>
 
 <script type="text/javascript">
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
@@ -314,7 +318,8 @@ new sap.m.Button( {
     text: "Save",
     icon:"sap-icon://save",
     type: sap.m.ButtonType.Accept,
-    tap: [ function(oEvt) {		  
+    tap: [ function(oEvt) {	
+    	sap.ui.getCore().getElementById(selectedFormQuestionGroup).setType(sap.m.ButtonType.Accept)
     	formQuestions.close()
 		
     	} ]   
@@ -348,7 +353,7 @@ new sap.m.Button( {
 
 	  }
 	
-	 })
+	 }).addStyleClass("sapUiSizeCompact")
 var formSelectFloc = new sap.m.Dialog("dlgSelectFloc",{
     title:"",
     modal: true,
@@ -753,13 +758,22 @@ function changeStatus(Status){
 			state : StatusState
 	 }))
 }
-
+function getJobType(x){
+	if (x=='124699'){
+		return "Quotation for Clean Water (Development Site)"
+	}
+	if (x=='661178'){
+		return "New Water Connection"
+	}
+}
 function buildJobs(){
 var item;	
 var lStatus="";
 var StatusState="";
 var StatusIcon="";
-	SQLStatement="SELECT MyNotifications.pcode, MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+var res;
+var jobType;
+	SQLStatement="SELECT MyNotifications.pcode, MyNotifications.type as jobtype, MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
 	SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
@@ -790,7 +804,12 @@ html5sql.process(SQLStatement,
 					}
 				}
 					
-				
+				 res=item.jobtype.split(":");
+				 if(res[0]=="FORM"){
+					 jobType=getJobType(res[1])
+				 }else{
+					 jobType=item.jobtype;
+				 }
 				 if(item.opstat=="Job Init"){
 					 StatusState=sap.ui.core.ValueState.None
 					 StatusIcon="create"
@@ -825,10 +844,13 @@ html5sql.process(SQLStatement,
 					
 						  attributes: [
 						                new sap.m.ObjectAttribute( {
-						                    text: 'Start:'+item.startdate
+						                    text: 'Start:'+formatDateTime1(item.startdate)
 						                }),
 						                new sap.m.ObjectAttribute( {
-						                	 text: 'End:'+item.enddate
+						                	 text: 'End:'+formatDateTime1(item.enddate)
+						                }),
+						                new sap.m.ObjectAttribute( {
+						                	 text: 'Job Type:'+jobType
 						                })
 						                ],
 						    firstStatus: [
@@ -837,7 +859,7 @@ html5sql.process(SQLStatement,
 						                    state:StatusState
 						                })
 						                ]
-					
+						  
 							  })
 						  );
 					  cnt++;
@@ -911,6 +933,9 @@ var StatusIcon="";
 var tabsdesc=""
 var tabsid=""
 var notifno=""
+var res;
+var jobType;
+var surveyID;
 SQLStatement="SELECT MyNotifications.pcode, MyNotifications.type as notiftype, MyOperations.orderno, MyOrders.equipment,MyOrders.funcloc, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address, MyOrders.postcode, MyOrders.longtext as orderlongtext, MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
 	SQLStatement+=" From MyOperations "
 	SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
@@ -957,10 +982,18 @@ html5sql.process(SQLStatement,
 				 StatusState=sap.ui.core.ValueState.Success
 				 StatusIcon="complete"
 			 }
-			 
+			 res=rowsArray[0].notiftype.split(":");
+			 if(res[0]=="FORM"){
+				 jobType=getJobType(res[1])
+				 surveyID=res[1]
+				 
+			 }else{
+				 surveyID="0"
+				 jobType=rowsArray[0].notiftype;
+			 }
 			 sap.ui.getCore().getElementById('HEADER').setTitle(rowsArray[0].operationdesc)
 			 sap.ui.getCore().getElementById('HEADER').setNumber(rowsArray[0].orderno+"-"+rowsArray[0].opno)
-			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(rowsArray[0].notiftype)
+			 sap.ui.getCore().getElementById('HEADER').setNumberUnit(jobType)
 			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
 					text : rowsArray[0].opstat,
@@ -1001,13 +1034,13 @@ html5sql.process(SQLStatement,
 		 }
 			
 		 if(JobType.length>3){
-			if(JobType=="FORM"){
-				 oDetailPage.addContent(buildDetailsTabs("FORM"))
+			if(surveyID!="0"){
+				 oDetailPage.addContent(buildDetailsTabs("FORM",surveyID))
 
 					
 				  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
 
-				 buildDetailsTabContent(orderno,opno,"FORM")
+				 buildDetailsTabContent(orderno,opno,"FORM",surveyID)
 			}else{
 			 html5sql.process("Select * from myitems where notifno = '"+notifno+"'",
 					 function(transaction, results, rowsArray){
@@ -1031,12 +1064,12 @@ html5sql.process(SQLStatement,
 			}
 		 }else{
 			
-			 oDetailPage.addContent(buildDetailsTabs("NORMAL"))
+			 oDetailPage.addContent(buildDetailsTabs("NORMAL","0"))
 
 			
 			  sap.ui.getCore().getElementById('LongText').setText(Longtext)	
 
-			 buildDetailsTabContent(orderno,opno,"NORMAL")
+			 buildDetailsTabContent(orderno,opno,"NORMAL","0")
 
 		 }
 		 
@@ -1069,57 +1102,46 @@ function BuildFormQuestions(x){
 	var surveyID=pars[1]
 	var groupID=pars[2]
 	var questionID=pars[3]
-	
+	var questions=[];
+var hdrOP=false;
 
+SQLStatement1="select surveyquestion.surveyid, surveyquestion.groupid, surveyquestion.questionid, surveyquestion.questiontype, surveyquestion.defaultvalue, surveyquestion.name, surveyquestion.title, surveyquestion.dependsonid, surveyquestion.dependsonval, "
+SQLStatement1+="surveysubquestion.subquestionid, surveysubquestion.subquestiontype, surveysubquestion.name as subquestionname, surveysubquestion.title as subquestiontitle from surveyquestion "
+SQLStatement1+="left join surveysubquestion on  "
+SQLStatement1+="surveysubquestion.surveyid = surveyquestion.surveyid and "
+SQLStatement1+="surveysubquestion.groupid = surveyquestion.groupid and "
+SQLStatement1+="surveysubquestion.questionid = surveyquestion.questionid "
+SQLStatement1+="where surveyquestion.surveyid = '"+surveyID+"' and surveyquestion.groupid = '"+groupID+"' order by surveyquestion.groupid, surveyquestion.questionid"	
 
-				
-				SQLStatement1="SELECT *  "
-					SQLStatement1+="from SurveyQuestion "
-					SQLStatement1+="where surveyid = '"+surveyID+"' and groupid = '"+groupID+"' order by groupid, questionid"	
 
 					html5sql.process(SQLStatement1,
-							 function(transaction, results, rowsArray1){
+							 function(transaction, results, rowsArray){
 									
-									for (var nq = 0; nq < rowsArray1.length; nq++) {
-										itemq = rowsArray1[nq];
-
-											BuildQuestionField('set'+itemq.groupid,"Q:"+itemq.questionid,itemq.questiontype,itemq.defaultvalue,itemq.title,itemq.dependsonid, itemq.dependsonval)
-											SQLStatement1="SELECT sq.groupid, sq.questionid, q.questiontype, sq.subquestionid, sq.subquestiontype, sq.title "
-												SQLStatement1+=" from SurveySubQuestion as sq join SurveyQuestion as q on sq.questionid = q.questionid"
-												SQLStatement1+=" where sq.surveyid = '"+surveyID+"' and sq.groupid = '"+groupID+"'  order by sq.groupid, sq.questionid, sq.subquestionid"	
-
-												html5sql.process(SQLStatement1,
-														 function(transaction, results, rowsArray){
-																currentSQ=""
-																for (var nsq = 0; nsq < rowsArray.length; nsq++) {
-																	itemsq = rowsArray[nsq];
-
-																		
-																		BuildSubQuestionField('set'+itemsq.groupid,itemsq.questiontype,"SQ:"+itemsq.subquestionid,itemsq.subquestiontype,itemsq.title)
-								
-
-																}
-
-																
-
-														 },
-														 function(error, statement){
-															alert("Error: " + error.message + " when SetConfigParam processing " + statement)
-														 }        
-														);
+									for (var nq = 0; nq < rowsArray.length; nq++) {
+										itemq = rowsArray[nq];
 										
-
+											if(itemq.subquestiontype==null){
+												hdrOP=false;
+												BuildQuestionField(hdrOP,'set'+itemq.groupid,"Q:"+itemq.questionid,itemq.questiontype,itemq.defaultvalue,itemq.title,itemq.dependsonid, itemq.dependsonval)												
+											}else{
+												if(hdrOP==false){
+													hdrOP=true;
+													BuildQuestionField(hdrOP,'set'+itemq.groupid,"Q:"+itemq.questionid,itemq.questiontype,itemq.defaultvalue,itemq.title,itemq.dependsonid, itemq.dependsonval)												
+													
+												}
+												BuildSubQuestionField('set'+itemq.groupid,itemq.questiontype,"Q:"+itemq.subquestionid,itemq.subquestiontype,itemq.subquestiontitle)										
+											}
 									}
 
 
 							 },
 							 function(error, statement){
-								alert(error)
+								alert(error+statement)
 							 }        
 							); 
 			
 }
-function BuildQuestionHeaders(){
+function BuildQuestionHeaders(surveyID){
 	
 	var HTMLToOutput='';
 	var HTMLToOutput1='';
@@ -1127,7 +1149,7 @@ function BuildQuestionHeaders(){
 	var SQLStatement1="";
 	var CurrentGroup="";
 	var currentSQ=""
-	var surveyID='124699'
+	
 	SQLStatement="SELECT *  "
 	SQLStatement+="from SurveyGroup "
 	SQLStatement+="where surveyid = '"+surveyID+"'"
@@ -1149,7 +1171,7 @@ function BuildQuestionHeaders(){
 		      								id: "QH:"+surveyID+":"+item.groupid+":"+item.id,
 		    							    text: item.name,
 		    							    
-		    							    type: 	sap.m.ButtonType.Accept,
+		    							    type: 	sap.m.ButtonType.Reject,
 		    							    press: [ function(oEvt) {		  
 		    							    	selectedFormQuestionGroup=oEvt.getParameters().id;
 		    							    	selectedFormQuestionGroupTitle=sap.ui.getCore().getElementById(oEvt.getParameters().id).getText();
@@ -1174,64 +1196,89 @@ function BuildQuestionHeaders(){
 		);
 
 }
-function loadQuestions(n){
-	alert(n)
-	//form.Questions.setTitle(n)
+function BuildQuestionField(op,panelid,id,type, defaultvalue, title,  dependsonid, dependsonval){
+var mode=false;
+var visible=true
+if(dependsonid>0){
+	visible=false;
 }
-function BuildQuestionField(panelid,id,type, defaultvalue, title,  dependsonid, dependsonval){
-
+    if(op){
+    	if(type=='Q'){
+    		formQuestions.addContent(
+    				new sap.ui.layout.form.SimpleForm("F"+id,{
+                   			maxContainerCols: 2,
+                   			visible: visible,
+                  			editable: true,
+                  			content: [new sap.m.Label({text:""}),new sap.m.Text({text:title}).addStyleClass("formHdr")
+                  				
+                  			]}).addStyleClass("sapUiSizeCompact"))
+    		return
+    	}
+    }
 
 	if(type=='S'){
 		
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
 new sap.m.Input(id,{ type: sap.m.InputType.Input})
               				
-              			]}))
+              			]}).addStyleClass("sapUiSizeCompact"))
 
 
 	}else if (type=="Y"){
+		if(defaultvalue=="N"){
+			mode=false;
+		}else{
+			mode=true;
+		}
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Switch(id,{
-              						state: true,
-              						change:[],
+              						state: mode,
+              						change:[function(evt){
+              							formChanged(evt)
+              							
+              						}],
               						type: sap.m.SwitchType.AcceptReject
-              					})
-              				
-              			]}))
+              					})            				
+              			]}).addStyleClass("sapUiSizeCompact"))
 	}else if (type=="M"){
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
               				
-              			]}))
+              			]}).addStyleClass("sapUiSizeCompact"))
 		
 	
 
 	}else if (type=="!"){
 
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
               				
-              			]}))
+              			]}).addStyleClass("sapUiSizeCompact"))
 	}else if (type==";"){
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
-               			maxContainerCols: 2,
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 1,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
@@ -1240,35 +1287,152 @@ new sap.m.Input(id,{ type: sap.m.InputType.Input})
 	}else if (type=="Q"){
 		
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
+               			visible: visible,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
               				
-              			]})	)	
+              			]}).addStyleClass("sapUiSizeCompact")	)	
 	}else{
 	
 		formQuestions.addContent(
-				new sap.ui.layout.form.SimpleForm({
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+               			visible: visible,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
+		}
+
+}
+function BuildSubQuestionField(panelid,type,id,type,title){
+
+
+	if(type=='S'){
+		
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
+
+
+	}else if (type=="Y"){
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Switch(id,{
+              						state: true,
+              						change:[function(evt){
+              							formChanged(evt)
+              							
+              						}],
+              						type: sap.m.SwitchType.AcceptReject
+              					})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
+	}else if (type=="M"){
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
                			maxContainerCols: 2,
               			editable: true,
               			content: [new sap.m.Label({text:title+":"+type}),
               			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
               				
-              			]}))
+              			]}).addStyleClass("sapUiSizeCompact"))
+		
+	
+
+	}else if (type=="!"){
+
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
+	}else if (type==";"){
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
+	}else if (type=="Q"){
+		
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact")	)	
+	}else{
+	
+		formQuestions.addContent(
+				new sap.ui.layout.form.SimpleForm("F"+id,{
+               			maxContainerCols: 2,
+              			editable: true,
+              			content: [new sap.m.Label({text:title+":"+type}),
+              			        new sap.m.Input(id,{ type: sap.m.InputType.Input})
+              				
+              			]}).addStyleClass("sapUiSizeCompact"))
 		}
 
 }
-function BuildSubQuestionField(panelid,qtype,id,type,title){
-
-
-	formQuestions.addContent(new sap.m.Label({text:title+":"+qtype}))	
-	formQuestions.addContent(new sap.m.Input(id,{ type: sap.m.InputType.Input}))
-
-
+function formChanged(oEvt){
+	x=oEvt.getParameters().id.split(":")
+	//alert(oEvt.getParameters().id)
+	//alert(sap.ui.getCore().getElementById(oEvt.getParameters().id).getText())
+	var SQLStatement="Select * from surveyquestionchildren where questionid = "+x[1]
+	//alert(SQLStatement)
+	html5sql.process(SQLStatement,
+			 function(transaction, results, rowsArray){
+					currentSQ=""
+					if( rowsArray.length>0) {
+						
+						
+						items = rowsArray[0];
+						var qChildren = items.childquestions.split(":");
+						for (var n = 0; n < qChildren.length; n++) {
+							//alert(qChildren[n])
+							if(sap.ui.getCore().getElementById("FQ:"+qChildren[n]).getVisible()){
+								sap.ui.getCore().getElementById("FQ:"+qChildren[n]).setVisible(false)
+							}else{
+								sap.ui.getCore().getElementById("FQ:"+qChildren[n]).setVisible(true)
+							}
+							/* if(items.questionvalue==$("#"+id).val()){
+								alert("toggle"+items.questionvalue)
+								$('#Div'+qChildren[n]).show();
+								}else{
+								$('#Div'+qChildren[n]).hide();
+								} */
+							}
+						
+					}
+						
+						
+			 },
+			 function(error, statement){
+				alert("Error: " + error.message + " when SetConfigParam processing " + statement)
+			 }        
+			);	
 }
-function buildDetailsTabs(Jtype){
+function buildDetailsTabs(Jtype,surveyID){
 tabBar=null;
 formtab=null;
 	if(Jtype=="FORM"){
@@ -1281,7 +1445,7 @@ formtab=null;
 	                       ]
 	           })
 		 
-		 BuildQuestionHeaders()
+		 BuildQuestionHeaders(surveyID)
 	}
 	
 	tabBar  = new sap.m.IconTabBar('tabBar',
@@ -1525,13 +1689,13 @@ var tabcontentQ;
 			 }        
 			);	
 }
-function buildDetailsTabContent(orderNo,OpNo,Jtype){
+function buildDetailsTabContent(orderNo,OpNo,Jtype,surveyID){
 
 
 //Create Status Details
 if(Jtype=="Form"){
 	tabcontent = sap.ui.getCore().getElementById('Form');
-	tabContent.addContent(new sap.m.Text({text:"ASDFGHJK"}))
+	tabContent.addContent(new sap.m.Text({text:surveyID}))
 }
 
 
@@ -1601,8 +1765,8 @@ html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and op
 						[
 						new sap.m.Text({text: rowsArray[n].confno}),
 			            new sap.m.Text({text: rowsArray[n].type}),
-						new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
-			            new sap.m.Text({text: rowsArray[n].enddate+" "+rowsArray[n].endtime}),
+						new sap.m.Text({text: formatDateTime(rowsArray[n].date+rowsArray[n].time)}),
+			            new sap.m.Text({text: formatDateTime(rowsArray[n].enddate+rowsArray[n].endtime)}),
 						new sap.m.Text({text: rowsArray[n].duration}),
 			            new sap.m.Text({text: rowsArray[n].final}),
 			           

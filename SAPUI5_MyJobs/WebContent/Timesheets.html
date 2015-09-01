@@ -20,6 +20,7 @@ html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);
 var currentStatus;
 var firstNotification="";
 var selectedTimesheetDate;
+var selectedTsheetEntry;
 var EmployeeID = localStorage.getItem("EmployeeID")
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
@@ -70,7 +71,7 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 					    text: "Save",
 					    tap: [ function(oEvt) {		  
 					    	createTimesheetEntry(
-									sap.ui.getCore().byId("Job").getSelectedItem().getKey(),
+									sap.ui.getCore().byId("Job").getSelectedItem().getText(),
 
 									sap.ui.getCore().byId("Time").getValue(),
 						
@@ -98,20 +99,7 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 								new sap.m.Select('Job',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "Job1",
-											text: "Job1"
-										}),
 
-										new sap.ui.core.Item({
-											key: "Job2",
-											text: "Job2"
-										}),
-
-										new sap.ui.core.Item({
-											key: "Job3",
-											text: "Job3"
-										})
 									],
 
 									change: function(oControlEvent) {
@@ -134,7 +122,8 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 							]
  					})
 
-            ]
+            ],
+            afterOpen:function(){BuildJobsList()}
 	 })
 var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
     title:"Create Timesheet",
@@ -174,7 +163,8 @@ var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
 							]
  					})
 
-            ]
+            ],
+      
 	 })
 function buildTimeSheets(){
 var item;	
@@ -265,7 +255,15 @@ var tsheet=res[1];
 var StatusState="Success";
 var StatusIcon="";
 var Status="";
-
+var NPTime=0;
+var NP15=0;
+var NP20=0;
+var PTime=0;
+var P15=0;
+var P20=0;
+var TTime=0;
+var T15=0;
+var T20=0;
 SQLStatement="SELECT * from tsdata where id = '"+tsheet+"'"
 
 html5sql.process(SQLStatement,
@@ -297,26 +295,66 @@ html5sql.process(SQLStatement,
 		
 		 html5sql.process("SELECT * FROM tsdata where activity != 'header' and date = '"+selectedTimesheetDate+"' ;",
 				 function(transaction, results, rowsArray){
-			 
+			 		
 					var n = 0;
 					var opTable = sap.ui.getCore().getElementById('TsheetTable');
 					opTable.removeAllItems();
 					while (n < rowsArray.length) {
-						
+						if(rowsArray[n].job.substring(0,1)=="U"){
+							NPTime+=parseFloat(rowsArray[n].time);
+							NP15+=parseFloat(rowsArray[n].ot15);
+							NP20+=parseFloat(rowsArray[n].ot20);
+						}else{
+							PTime+=parseFloat(rowsArray[n].time);
+							P15+=parseFloat(rowsArray[n].ot15);
+							P20+=parseFloat(rowsArray[n].ot20);
+						}
 				
-						opTable.addItem (new sap.m.ColumnListItem({
+						opTable.addItem (new sap.m.ColumnListItem("TSD:"+rowsArray[n].id,{
 							cells : 
 								[
-					            new sap.m.Text({text: rowsArray[n].job}),
+					            new sap.m.Text({text: rowsArray[n].job+"-"+rowsArray[n].activity}),
 
-					            new sap.m.Text({text: rowsArray[n].time}),
-					            new sap.m.Text({text: rowsArray[n].ot15}),
-					            new sap.m.Text({text: rowsArray[n].ot20})   
+					            new sap.m.Text({text: parseFloat(rowsArray[n].time).toFixed(2)}),
+					            new sap.m.Text({text: parseFloat(rowsArray[n].ot15).toFixed(2)}),
+					            new sap.m.Text({text: parseFloat(rowsArray[n].ot20).toFixed(2)})
 						 		]
 							}));
 						n++;
 					 }
+	
+					opTable = sap.ui.getCore().getElementById('TsheetTotalTable');
+					opTable.removeAllItems();
+					opTable.addItem (new sap.m.ColumnListItem({
+						cells : 
+							[
+				            new sap.m.Text({text: "Productive"}),
 
+				            new sap.m.Text({text: PTime.toFixed(2)}),
+				            new sap.m.Text({text: P15.toFixed(2)}),
+				            new sap.m.Text({text: P20.toFixed(2)})   
+					 		]
+						}));
+					opTable.addItem (new sap.m.ColumnListItem({
+						cells : 
+							[
+				            new sap.m.Text({text: "Non Productive"}),
+
+				            new sap.m.Text({text: NPTime.toFixed(2)}),
+				            new sap.m.Text({text: NP15.toFixed(2)}),
+				            new sap.m.Text({text: NP20.toFixed(2)})   
+					 		]
+						}));
+					opTable.addItem (new sap.m.ColumnListItem({
+						cells : 
+							[
+				            new sap.m.Text({text: "Total"}),
+
+				            new sap.m.Text({text: (PTime+NPTime).toFixed(2)}),
+				            new sap.m.Text({text: (P15+NP15).toFixed(2)}),
+				            new sap.m.Text({text: (P20+NP20).toFixed(2)})   
+					 		]
+						}));
 				 },
 				 function(error, statement){
 					 alert("error"+statement) 
@@ -366,22 +404,61 @@ function createTimesheetHeader(d){
 				 }        
 				);
 	}
-function createTimesheetEntry(job,time,ot15,ot20){
-	
+function deleteTimesheetData(){
 
-	SQLStatement='INSERT INTO TSData ( date , activity, time, ot15, ot20) VALUES ( '+ 
-								  '"'+selectedTimesheetDate+'",'+
-								  '"'+job+'",'+
-								  
-								  '"'+time+'",'+
-								  '"'+ot15+'",'+
-								  '"'+ot20+'");'
+	
+alert("intoDelete"+selectedTimesheetDate)
+
+	SQLStatement='Delete from TSData where date = "'+selectedTimesheetDate+'"'
 
 			
 
 			html5sql.process(SQLStatement,
 				 function(transaction, results, rowsArray){
-				 
+						window.location.href="Timesheets.html"
+					
+				 },
+				 function(error, statement){
+					
+				 }        
+				);
+	}
+function deleteTimesheetEntry(){
+res=selectedTsheetEntry.split(":")
+	
+	
+
+		SQLStatement='Delete from TSData where id = "'+res[1]+'"'
+
+				
+
+				html5sql.process(SQLStatement,
+					 function(transaction, results, rowsArray){
+							sap.ui.getCore().getElementById('TsheetTable').removeItem(selectedTsheetEntry);
+							//window.location.href="Timesheets.html"
+						
+					 },
+					 function(error, statement){
+						
+					 }        
+					); 
+		}
+function createTimesheetEntry(job,time,ot15,ot20){
+	var res=job.split("-")
+
+	SQLStatement='INSERT INTO TSData ( date , job, activity, time, ot15, ot20) VALUES ( '+ 
+								  '"'+selectedTimesheetDate+'",'+
+								  '"'+res[0]+'",'+
+								  '"'+res[1]+'",'+
+								  '"'+'0'+time+'",'+
+								  '"'+'0'+ot15+'",'+
+								  '"'+'0'+ot20+'");'
+
+			
+
+			html5sql.process(SQLStatement,
+				 function(transaction, results, rowsArray){
+				buildDetailsContent("Added:"+selectedTimesheetDate)
 				
 				 },
 				 function(error, statement){
@@ -394,26 +471,108 @@ function buildDetailsTable(){
        
      	     var TsheetData=          
 								new sap.m.Table("TsheetTable",{
+
+
 									columns:[
 									        
 									         new sap.m.Column({header: new sap.m.Label({text:"Job"}),
 									        	 hAlign: 'Left',width: '55%',minScreenWidth : "" , demandPopin: true}),
 									        
 									         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
-									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+									        	 hAlign: 'Right',width: '15%', minScreenWidth : "" , demandPopin: false}),
 										
 									         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
-									        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+									        	 hAlign: 'Right',width: '15%', minScreenWidth : "" , demandPopin: false}),
 									         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
-									        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true })       	                         
-							           	     ]
+									        	 hAlign: 'Right',width: '15%',minScreenWidth : "" , demandPopin: true })       	                         
+							           	     ],
+							           	  mode: sap.m.ListMode.SingleSelectMaster
 								})
-			
+     	    TsheetData.attachSelectionChange(function(oEvent) {
+	     	    	selectedTsheetEntry=oEvent.getParameter("listItem").getId();
+	     	    	})	  	    
 	return TsheetData;
 
 	}
+function buildDetailsTotalTable(){
+	
+    
+     var TsheetData=          
+						new sap.m.Table("TsheetTotalTable",{
+							columns:[
+							        
+							         new sap.m.Column({header: new sap.m.Label({text:"Totals"}),
+							        	 hAlign: 'Left',width: '55%',minScreenWidth : "" , demandPopin: true}),
+							        
+							         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+							        	 hAlign: 'Right',width: '15%', minScreenWidth : "" , demandPopin: false}),
+								
+							         new sap.m.Column({header: new sap.m.Label({text:"OT15"}),
+							        	 hAlign: 'Right',width: '15%', minScreenWidth : "" , demandPopin: false}),
+							         new sap.m.Column({header: new sap.m.Label({text:"OT20"}),
+							        	 hAlign: 'Right',width: '15%',minScreenWidth : "" , demandPopin: true })       	                         
+					           	     ]
+						})
+	
+return TsheetData;
+
+}
+function BuildJobsList(){
 
 
+		var SQLStatement="";
+		var FirstVal="";
+		SQLStatement="SELECT MyNotifications.pcode, MyNotifications.type as jobtype, MyOperations.orderno, MyOperationsSplit.assignedto as empid, MyOperations.opno, myuserstatus.statusdesc  as opstat, MyOrders.type, MyOperations.startdate, MyOperations.enddate, MyOrders.address,  MyOrders.postcode,MyOrders.notifno, MyOrders.gis, MyOperations.status, MyOrders.priority, MyOperations.apptstart, MyOperations.apptend, MyOrders.shorttext as orderdesc , MyOperations.shorttext as operationdesc , MyOrders.contact , MyOperationInfo.Type as infotype , MyOperationInfo.value1 as infovalue1, MyOperationInfo.value2 as infovalue2"
+			SQLStatement+=" From MyOperations "
+			SQLStatement+="left join myoperationinfo on myoperations.orderno = myoperationinfo.orderno "
+			SQLStatement+="	and myoperations.opno = myoperationinfo.opno "
+			SQLStatement+="left join myoperationssplit on myoperations.orderno = myoperationssplit.orderno "
+			SQLStatement+="	and myoperations.opno = myoperationssplit.opno "
+			SQLStatement+="left join myuserstatus on myoperations.orderno = myuserstatus.orderno "
+			SQLStatement+="	and myoperations.opno = myuserstatus.opno "
+			SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
+			SQLStatement+="left join mynotifications on myorders.notifno = mynotifications.notifno "
+			SQLStatement+=" where myoperationssplit.assignedto = '"+EmployeeID+"'"
+			html5sql.process(SQLStatement,
+			 function(transaction, results, rowsArray){
+				
+				sap.ui.getCore().getElementById("Job").destroyItems();
+				
+					for (var n = 0; n < rowsArray.length; n++) {
+						item = rowsArray[n];
+						sap.ui.getCore().getElementById("Job").addItem(
+								new sap.ui.core.Item({
+									key: item.orderno+item.opno,
+									text: item.orderno+item.opno+"-"+item.operationdesc
+								}))
+					}
+					html5sql.process("Select * from tsnpJobs where subtype='0';",
+							 function(transaction, results, rowsArray){
+							
+								
+									for (var n = 0; n < rowsArray.length; n++) {
+										item = rowsArray[n];
+										sap.ui.getCore().getElementById("Job").addItem(
+												new sap.ui.core.Item({
+													key: item.jobno,
+													text: item.jobno+"-"+item.description
+												}))
+									}
+								
+									
+							 },
+							 function(error, statement){
+								 alert("NP"+statement)
+							 }        
+							);
+					
+			 },
+			 function(error, statement){
+				 alert("EJ"+statement)
+			 }        
+			);
+
+		}
 
 
 
@@ -421,17 +580,28 @@ function buildDetailsTable(){
 			"detail",
 			{
 				title : "Entries",
-				content : [buildDetails(),buildDetailsTable()],
+				content : [buildDetails(),buildDetailsTable(),
+				           new sap.m.Text(""),
+				           buildDetailsTotalTable()],
 				footer  : new sap.m.Bar (
 						{
 							id : 'master-footer',
-
+							contentMiddle : [
+											new sap.m.Button("AddNewTimeSheet", {
+							   					 text: "Create",
+							   					 icon: "sap-icon://create-entry-time",
+							  					 press: [ function(){
+							  						formNewTimesheetEntry.open(); 
+							  						
+							  							}]
+												 })
+										],
 							contentRight : [
-									new sap.m.Button("AddNewTimeSheet", {
-					   					 text: "create",
-					   					 icon: "sap-icon://create-entry-time",
+									new sap.m.Button("DeleteNewTimeSheet", {
+					   					 text: "Delete",
+					   					 icon: "sap-icon://delete",
 					  					 press: [ function(){
-					  						formNewTimesheetEntry.open(); 
+					  						deleteTimesheetEntry()
 					  						
 					  							}]
 										 })
@@ -473,7 +643,17 @@ function buildDetailsTable(){
 					  						
 					  							}]
 										 })
-								]
+								],
+								contentRight : [
+												new sap.m.Button("DeleteTimeSheetEntry", {
+								   					 text: "Delete",
+								   					 icon: "sap-icon://delete",
+								  					 press: [ function(){
+								  						deleteTimesheetData()
+								  							
+								  							}]
+													 })
+											]
 						})			 
 
 			});

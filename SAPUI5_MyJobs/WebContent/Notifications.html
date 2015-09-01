@@ -238,7 +238,7 @@ html5sql.process(SQLStatement,
 					
 						  attributes: [
 						                new sap.m.ObjectAttribute( {
-						                    text: 'Start:'+item.startdate
+						                    text: 'Start:'+formatDateTime1(item.startdate)
 						                })
 						                ],
 						    firstStatus: [
@@ -336,7 +336,7 @@ html5sql.process(SQLStatement,
 			 }))
 			
 			  sap.ui.getCore().getElementById('StartDate').setTitle("Start Date")
-			  sap.ui.getCore().getElementById('StartDate').setText(rowsArray[0].startdate)
+			  sap.ui.getCore().getElementById('StartDate').setText(formatDateTime1(rowsArray[0].startdate))
 			  sap.ui.getCore().getElementById('ReportedOn').setTitle("Reported On ")
 			  sap.ui.getCore().getElementById('ReportedOn').setText(rowsArray[0].enddate)
 
