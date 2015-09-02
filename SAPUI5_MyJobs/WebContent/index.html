@@ -14,16 +14,28 @@
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
 <script type="text/javascript">
-function checkLogin()
+function checkLogin(n)
 {
-
-var user=sap.ui.getCore().getElementById("User").getValue()
-var pw=sap.ui.getCore().getElementById("Password").getValue()
-	html5sql.process("SELECT * from MyUserDets where user = '"+user+"' and password =  '"+pw+"'",
+var SQLStatement=""
+var user=""
+var pw=""
+var pin=""
+if(n==1){
+	pin=sap.ui.getCore().getElementById("Pin").getValue()
+	SQLStatement="SELECT * from MyUserDets where pincode = '"+pin+"'"
+}else{
+	user=sap.ui.getCore().getElementById("User").getValue()
+	pw=sap.ui.getCore().getElementById("Password").getValue()
+	SQLStatement="SELECT * from MyUserDets where user = '"+user+"' and password =  '"+pw+"'"
+}
+	
+	html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
 			if( rowsArray.length > 0) {
+				localStorage.setItem("MobileUser",rowsArray[0].mobileuser)	
 				localStorage.setItem("EmployeeID",rowsArray[0].employeeid)	
 				localStorage.setItem("VehicleReg",rowsArray[0].vehiclereg)	
+				localStorage.setItem("PinCode",rowsArray[0].pincode)	
 				SetLocalStorageChangePage('VehicleCheck.html')
 						
 
@@ -34,8 +46,7 @@ var pw=sap.ui.getCore().getElementById("Password").getValue()
 		
 	 },
 	 function(error, statement){
-			$("#errorMessage").html("<font color='red'>Invalid User or Password</font>")
-			$("#popupError").popup('open',{positionTo: '#errorMessagePosition'});
+			
 	 }        
 	);			
 
@@ -270,6 +281,71 @@ var formCreateDB = new sap.m.Dialog("dlgCreateDB",{
  				})
             ]
  })
+ function prepareLogin()
+ {
+	html5sql.process("SELECT * from MyUserDets",
+			 function(transaction, results, rowsArray){
+					
+					if(rowsArray[0].pincode>100){
+						
+						formLogin.addContent(
+						new sap.ui.layout.form.SimpleForm({
+							title: "Enter your Pincode",
+							maxContainerCols : 2,
+							content : 	[							
+							
+										new sap.m.Label({text:"Pin Code"}),
+										new sap.m.Input("Pin",{type: sap.m.InputType.Number}),
+										new sap.m.Label({text:""}),
+							       		new sap.m.Button( {
+							       			 text: "Login",
+							       			 type: 	sap.m.ButtonType.Accept,
+							       			 icon:"sap-icon://accept",
+							       				 press: [ 
+							       				          function(){
+							       							checkLogin(1)
+							       							}
+							       				        ]
+							       			 })
+										]
+		 						})
+						)
+					
+					}else{
+						
+						
+						 formLogin.addContent(
+								 new sap.ui.layout.form.SimpleForm({
+										title: "Enter your User & Password",
+										maxContainerCols : 2,
+										content : 	[	
+								 	new sap.m.Label({text:"User"}),
+									new sap.m.Input("User",{type: sap.m.InputType.Input}),
+									new sap.m.Label({text:"Password"}),
+									new sap.m.Input("Password",{type: sap.m.InputType.Password}),
+									new sap.m.Label({text:""}),
+						       		new sap.m.Button( {
+						       			 text: "Login",
+						       			 type: 	sap.m.ButtonType.Accept,
+						       			 icon:"sap-icon://accept",
+						       				 press: [ function(){
+						       					checkLogin(2)
+						       						}]
+						       			 }) 
+									]
+			 						}))
+							
+					}
+				
+			 },
+			 function(error, statement){
+					$("#errorMessage").html("<font color='red'>Invalid User or Password</font>")
+					$("#popupError").popup('open',{positionTo: '#errorMessagePosition'});
+			 }        
+			);
+
+		
+ }
 var formLogin = new sap.m.Dialog("dlgLogin",{
     title:"Login",
     modal: true,
@@ -293,27 +369,11 @@ var formLogin = new sap.m.Dialog("dlgLogin",{
 	       			 })	       			 
 				],					
     content:[
- 			new sap.ui.layout.form.SimpleForm({
-			
-				maxContainerCols : 2,
-				content : 	[							
-			                new sap.m.Label({text:"User"}),
-							new sap.m.Input("User",{type: sap.m.InputType.Input}),
-							new sap.m.Label({text:"password"}),
-							new sap.m.Input("Password",{type: sap.m.InputType.Password}),
-							new sap.m.Label({text:""}),
-							new sap.m.Button({
-									icon:"sap-icon://accept",
-								   text: "Login",
-								   type: sap.m.ButtonType.Accept,
-								   tap: [ function(oEvt) {		
-										checkLogin()
-									   } ]
-								})
-
-							]
- 				})
-            ]
+ 			
+            ],
+            afterOpen:function(){
+            	prepareLogin()
+            }
  })
 
 
@@ -365,7 +425,7 @@ var page  = new sap.m.Page('homePage',{
     				minWidth : 800,
     				maxContainerCols : 1,
     				content : 	[							
-								new sap.m.Label({text:"Welcome"}),
+								
 								
     							]
      				})
@@ -405,7 +465,9 @@ $(function() {
 				     );
 					
 					}else{
-					formLogin.open()
+						 
+						 formLogin.open()
+						
 					}
 				
 

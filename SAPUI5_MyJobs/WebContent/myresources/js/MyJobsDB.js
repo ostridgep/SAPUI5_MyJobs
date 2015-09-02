@@ -232,6 +232,23 @@ function GetConfigParam(paramName){
 		 }   
 	);
 }
+function updatePinCode(pincode){
+
+var user=localStorage.getItem('MobileUser')
+		localStorage.setItem('PinCode',pincode);
+
+		sqlstatement="UPDATE MyUserDets SET pincode = '"+pincode+"' WHERE mobileuser = '"+user+"';";
+		
+	html5sql.process(sqlstatement,
+	 function(){
+		 //alert("Success dropping Tables");
+	 },
+	 function(error, statement){
+		opMessage("Error: " + error.message + " when updateing Pincode " + statement);
+	 }        
+	);
+
+}
 function SetConfigParam(paramName, paramValue){
 
 			if (paramName=='SERVERNAME'){
@@ -257,6 +274,7 @@ function SetConfigParam(paramName, paramValue){
 				localStorage.setItem('LastSyncUpload',paramValue);
 		
 			}
+
 			if (paramName=='TRACE'){
 				localStorage.setItem('Trace',paramValue);		
 			}
@@ -1100,7 +1118,7 @@ function createTables(type) {
 					 'CREATE TABLE IF NOT EXISTS MyNewJobs     			( id integer primary key autoincrement, type TEXT, defect TEXT, mpoint TEXT, mpval TEXT, shorttext TEXT, longtext TEXT, description TEXT, date TEXT, time TEXT, funcloc TEXT, equipment TEXT, cattype TEXT, activitycodegroup TEXT, activitycode TEXT, activitytext TEXT, prioritytype TEXT, priority TEXT, reportedby TEXT, state TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyWorkConfig     		( id integer primary key autoincrement, paramname TEXT, paramvalue TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyWorkSyncDets    		( id integer primary key autoincrement, lastsync TEXT, comments   TEXT);'+
-					 'CREATE TABLE IF NOT EXISTS MyUserDets             ( id integer primary key autoincrement, mobileuser TEXT, vehiclereg TEXT, employeeid TEXT, user TEXT, password TEXT);'+
+					 'CREATE TABLE IF NOT EXISTS MyUserDets             ( id integer primary key autoincrement, mobileuser TEXT, vehiclereg TEXT, employeeid TEXT, user TEXT, password TEXT,pincode TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyRefUsers    			(  id integer primary key autoincrement, userid TEXT, scenario TEXT, plant TEXT, workcenter TEXT, plannergroup TEXT, plannergroupplant TEXT, storagegroup TEXT, storageplant TEXT, partner TEXT, partnerrole TEXT, funclocint TEXT, funcloc TEXT, compcode TEXT, employeeno TEXT, equipment TEXT, firstname TEXT, lastname TEXT, telno TEXT);'+													
 					 'CREATE TABLE IF NOT EXISTS MyRefOrderTypes     	(  id integer primary key autoincrement, scenario TEXT, type TEXT, description TEXT, statusprofile TEXT, opstatusprofile TEXT, priorityprofile TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyRefNotifTypes     	(  id integer primary key autoincrement, scenario TEXT, type TEXT, description TEXT, statusprofile TEXT, taskstatusprofile TEXT,priority_type TEXT);'+
@@ -1121,8 +1139,9 @@ function createTables(type) {
 					 
 					 'CREATE TABLE IF NOT EXISTS HRTravel     			( id integer primary key autoincrement, requesteddate TEXT, startdate TEXT, enddate TEXT, travelfrom TEXT, travelto TEXT, status TEXT, comments TEXT);'+
 
+					 'CREATE TABLE IF NOT EXISTS JobAnswers     		( id integer primary key autoincrement, orderno TEXT, opno TEXT, user TEXT, updateddate TEXT, item TEXT, task TEXT, value TEXT);'+
 					 
-					 
+					 'CREATE TABLE IF NOT EXISTS SurveyAnswers     		( id integer primary key autoincrement, orderno TEXT, opno TEXT, user TEXT, updateddate TEXT, surveyid TEXT, groupid TEXT, questionid TEXT, name TEXT, answer TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS Survey     			( id integer primary key autoincrement, surveyid TEXT, name TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS SurveyGroup     		( id integer primary key autoincrement, surveyid TEXT, groupid TEXT, name TEXT, title TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS SurveyQuestion    		( id integer primary key autoincrement, surveyid TEXT, groupid TEXT, questionid TEXT, questiontype TEXT, defaultvalue TEXT, name TEXT, title TEXT, dependsonid TEXT, dependsonval TEXT);'+
@@ -1204,6 +1223,7 @@ function dropTables() {
 						'DROP TABLE IF EXISTS RefCodes;'+
 						'DROP TABLE IF EXISTS HRAbsence;'+	
 						'DROP TABLE IF EXISTS HRTravel;'+	
+						'DROP TABLE IF EXISTS SurveyAnswers;'+	
 						'DROP TABLE IF EXISTS Survey;'+	
 						'DROP TABLE IF EXISTS SurveyGroup;'+
 						'DROP TABLE IF EXISTS SurveyQuestion;'+
@@ -1214,7 +1234,7 @@ function dropTables() {
 						'DROP TABLE IF EXISTS TSActivities;'+	
 						'DROP TABLE IF EXISTS TSNPJobs;'+
 						'DROP TABLE IF EXISTS TSData;'+
-						
+						'DROP TABLE IF EXISTS JobAnswers;'+							
 						'DROP TABLE IF EXISTS GASSurveyQ;'+	
 						'DROP TABLE IF EXISTS GASSurveyA;'+
 						'DROP TABLE IF EXISTS GASSurveyMake;'+
@@ -1275,6 +1295,7 @@ function emptyTables(type) {
 						'DELETE FROM  RefCodes;'+ 
 						'DELETE FROM  HRAbsence;'+	
 						'DELETE FROM  HRTravel;'+	
+						'DELETE FROM  SurveyAnswers;'+	
 						'DELETE FROM  Survey;'+	
 						'DELETE FROM  SurveyGroup;'+
 						'DELETE FROM  SurveyQuestion;'+
@@ -1285,6 +1306,7 @@ function emptyTables(type) {
 						'DELETE FROM  TSActivities;'+	
 						'DELETE FROM  TSNPJobs;'+
 						'DELETE FROM  TSData;'+
+						'DELETE FROM  JobAnswers;'+	
 						'DELETE FROM  GASSurveyQ;'+	
 						'DELETE FROM  GASSurveyA;'+
 						'DELETE FROM  GASSurveyMake;'+
@@ -1382,6 +1404,7 @@ function resetTables() {
 					'DELETE FROM  RefCodes;'+  
 					'DELETE FROM  HRAbsence;'+
 					'DELETE FROM  HRTravel;'+	
+					'DELETE FROM  SurveyAnswers;'+	
 					'DELETE FROM  Survey;'+	
 					'DELETE FROM  SurveyGroup;'+
 					'DELETE FROM  SurveyQuestion;'+
@@ -1392,6 +1415,7 @@ function resetTables() {
 					'DELETE FROM  TSActivities;'+	
 					'DELETE FROM  TSNPJobs;'+
 					'DELETE FROM  TSData;'+
+					'DELETE FROM  JobAnswers;'+	
 					'DELETE FROM  GASSurveyQ;'+	
 					'DELETE FROM  GASSurveyA;'+
 					'DELETE FROM  GASSurveyMake;'+

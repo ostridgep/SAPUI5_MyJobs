@@ -34,14 +34,15 @@ directionsDisplay,
 directionsService;
 directionsDisplay = new google.maps.DirectionsRenderer(); 
 directionsService = new google.maps.DirectionsService();   
-
+var previousFloc;
 var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
 var selectedFloc;
 var formtab=null;
 var tabBar=null;
 var selectedFormQuestionGroup;
 var selectedFormQuestionGroupTitle;
-
+var CurrentOrderNo="";
+var CurrentOpNo="";
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
 	 itemPress:[function(oEvt) {	
@@ -360,7 +361,31 @@ var formSelectFloc = new sap.m.Dialog("dlgSelectFloc",{
     contentWidth:"1em",
     buttons: [
   
+					new sap.m.Button("flocPrevButton" ,{
+						 icon:"sap-icon://navigation-up-arrow",
+					    text: "previous Level",
+					    tap: [ function(oEvt) {	
+					    	selectedFloc=""
+							var x =  formSelectFloc.getTitle().split("-")
+							if (x.length==1){
+								selectedFloc=x;						
+							}
+							var y=x.length;
+							y--;
+							for (var n = 0; n < y; n++) {
+								selectedFloc+=x[n]
+								z=n;
+								z++;
+								if(z!=y){
+									selectedFloc=selectedFloc+"-"
+									}
+								}
+									
+		  buildFlocList(selectedFloc)
+} ]   
+					}),
 					new sap.m.Button( {
+						icon:"sap-icon://sys-cancel",
 					    text: "Cancel",
 					    tap: [ function(oEvt) {		  
 							 
@@ -734,18 +759,24 @@ function changeStatus(Status){
 		 StatusState=sap.ui.core.ValueState.None
 		 StatusIcon="create"
 	 }else if(Status=="Job Accepted"){
+		 updateOperationStatus(CurrentOrderNo, CurrentOpNo, "JACC", "Job Accepted")
 		 StatusState=sap.ui.core.ValueState.Success
 		 StatusIcon="accept"
 	 }else if(Status=="Job Rejected"){
+		 updateOperationStatus(CurrentOrderNo, CurrentOpNo, "JREJ" ,"Job Rejected")
 		 StatusState=sap.ui.core.ValueState.Error
 		 StatusIcon="decline"
 	 }else if(Status=="Job Suspended"){
+		 updateOperationStatus(CurrentOrderNo, CurrentOpNo, "JSUS", "Job Suspended")
 		 StatusState=sap.ui.core.ValueState.Warning
 		 StatusIcon="pause"
 	 }else if(Status=="On Route"){
+		sendSMS('011447540293818','Engineer on Route')
+		updateOperationStatus(CurrentOrderNo, CurrentOpNo, "JONR", "On-Route")
 		 StatusState=sap.ui.core.ValueState.Success
 		 StatusIcon="car-rental"
 	 }else if(Status=="On Site"){
+		 updateOperationStatus(CurrentOrderNo, CurrentOpNo, "JSTR", "Job Started")
 		 StatusState=sap.ui.core.ValueState.Success
 		 StatusIcon="building"
 	 }
@@ -1004,6 +1035,8 @@ html5sql.process(SQLStatement,
 			 				 currentPostcode=rowsArray[0].postcode;
 			 getLatLonFromPcode(currentPostcode)
 			 currentJob="job:"+rowsArray[0].orderno+':'+rowsArray[0].opno;
+			 CurrentOrderNo=CurrentOrderNo
+			 CurrentOpNo=rowsArray[0].opno
 			 currentStatus=rowsArray[0].opstat;
 			 if(currentStatus=="Job Finished"){
 				
@@ -1149,12 +1182,18 @@ function BuildQuestionHeaders(surveyID){
 	var SQLStatement1="";
 	var CurrentGroup="";
 	var currentSQ=""
-	
+	var buttons=[]
 	SQLStatement="SELECT *  "
 	SQLStatement+="from SurveyGroup "
 	SQLStatement+="where surveyid = '"+surveyID+"'"
 	formtab.destroyContent()
-	
+	var container =  new sap.m.Panel({
+					
+					content:[
+					        
+					         ],
+					
+				})
 		html5sql.process(SQLStatement,
 		 function(transaction, results, rowsArray){
 			
@@ -1162,11 +1201,12 @@ function BuildQuestionHeaders(surveyID){
 					
 					item = rowsArray[n];
 
-					formtab.addContent(
+					container.addContent(
 							new sap.ui.layout.form.SimpleForm({
-		               			maxContainerCols: 1,
-		              			editable: true,
-		              			content: [
+	                   			maxContainerCols: 1,
+	                   			visible: visible,
+	                  			editable: true,
+	                  			content: [
 		      							new sap.m.Button( {
 		      								id: "QH:"+surveyID+":"+item.groupid+":"+item.id,
 		    							    text: item.name,
@@ -1179,15 +1219,16 @@ function BuildQuestionHeaders(surveyID){
 		    									formQuestions.open()
 		    									  } ]
 		    							})
-		              				
-		              			]})
+		              				]
+		              		
 
-							)
+							}))
 
 
 				
 
 				}
+				formtab.addContent(container)
 	 
 		 },
 		 function(error, statement){
@@ -1905,7 +1946,9 @@ var fid=parentid.split("-")
 
 var sqlstatement = "select * from funclocs where parentid='"+parentid+"'"
 flocList.destroyItems();
+previousFloc=formSelectFloc.getTitle();
 formSelectFloc.setTitle(selectedFloc)
+
 var fidpos=fid.length
 
 html5sql.process(sqlstatement,
@@ -1930,7 +1973,12 @@ html5sql.process(sqlstatement,
 				
 				n++;
 			 }
-			
+			if(fidpos==1){
+				sap.ui.getCore().getElementById("flocPrevButton").setVisible(false)
+			}else{
+				sap.ui.getCore().getElementById("flocPrevButton").setVisible(true)
+			}
+				
 		 },
 		 function(error, statement){
 			 //outputLogToDB(); 

@@ -21,6 +21,7 @@ var currentStatus;
 var firstNotification="";
 var selectedTimesheetDate;
 var selectedTsheetEntry;
+var selectedTimesheetId;
 var EmployeeID = localStorage.getItem("EmployeeID")
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
@@ -78,6 +79,7 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
 									sap.ui.getCore().byId("OT15").getValue(),
 									sap.ui.getCore().byId("OT20").getValue());  
 									formNewTimesheetEntry.close()
+									
 							  } ]
 					   
 					}),   
@@ -124,7 +126,13 @@ var formNewTimesheetEntry = new sap.m.Dialog("dlgTimesheetEntry",{
  					})
 
             ],
-            afterOpen:function(){BuildJobsList()}
+            afterOpen:function(){BuildJobsList()
+            	sap.ui.getCore().byId("Time").setValue("")
+				
+				sap.ui.getCore().byId("OT15").setValue("")
+				sap.ui.getCore().byId("OT20").setValue("")  
+            	},
+
 	 })
 var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
     title:"Create Timesheet",
@@ -134,8 +142,9 @@ var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
 					new sap.m.Button( {
 					    text: "Save",
 					    tap: [ function(oEvt) {		  
-							createTimesheetHeader(sap.ui.getCore().byId("NewTimesheetDate").getValue());  
+							createTimesheetHeader(sap.ui.getCore().byId("NewTimesheetDate").getValue(),sap.ui.getCore().byId("Comments").getValue());  
 									formNewTimesheet.close()
+									window.location.href="Timesheets.html"
 							  } ]
 					   
 					}),   
@@ -160,7 +169,9 @@ var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
 									type : "Date",
 									displayFormat : "yyyy/MM/dd",
 									dateValue : new Date()
-								})
+								}),
+								new sap.m.Label({text: "Comments:"}),
+								new sap.m.TextArea("Comments",{ rows: 3})
 							]
  					})
 
@@ -170,6 +181,7 @@ var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
 function buildTimeSheets(){
 var item;	
 var lStatus="";
+var Status=""
 var StatusState="";
 var StatusIcon="";
 var firstTsheet="";
@@ -183,12 +195,14 @@ html5sql.process(SQLStatement,
 				if(cnt==0){
 					firstTsheet="tsheet:"+item.date
 				}
-				
-				if (item.activity=="SUBMITTED"){
-					StatusState="Error"
-				}else{
-					StatusState="Success"
-				}
+				 if(item.skill=="SUBMITTED"){
+					 StatusState="Error"
+					 Status="Submitted"
+				 }else{
+					 StatusState="Success"
+					 Status="Local"				 
+				 }			
+
 				 
 				standardList.addItem(
 						  new sap.m.ObjectListItem("tsheet:"+item.date,
@@ -200,7 +214,7 @@ html5sql.process(SQLStatement,
 						
 						    firstStatus: [
 						                new sap.m.ObjectStatus( {
-						                    text: item.activity,
+						                    text: Status,
 						                    state:StatusState
 						                })
 						                ]
@@ -214,7 +228,7 @@ html5sql.process(SQLStatement,
 			buildDetailsContent(firstTsheet)
 		 },
 		 function(error, statement){
-			 alert(error+statement)
+			
 		 }        
 		);	
 cnt = 0;
@@ -237,7 +251,12 @@ function buildDetails(){
 	            	                  
 	            	                   
 	            	                })
-	            	                ]
+	            	                ],
+	            	                attributes: [
+	         	               	                new sap.m.ObjectAttribute('TSComments',{
+	         	            	                   
+	         	            	                })
+	         	               	                ]
 
 });
 
@@ -265,25 +284,33 @@ var P20=0;
 var TTime=0;
 var T15=0;
 var T20=0;
-var opTable=sap.ui.getCore().getElementById('TsheetTable');
+var opTable   =sap.ui.getCore().getElementById('TsheetTable');
 var opTotTable=sap.ui.getCore().getElementById('TsheetTotalTable');
 SQLStatement="SELECT * from tsdata where date = '"+tsheet+"' and activity = 'header'"
 
-opTable.removeAllItems();	
-opTotTable.removeAllItems();	
+opTable.destroyItems();	
+opTotTable.destroyItems();	
 html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
 		
 		 if (rowsArray.length>0){
-			 if(rowsArray[0].activity=="SUBMITTED"){
-				 StatusState="ERROR"
+			 selectedTimesheetId=rowsArray[0].id
+			 if(rowsArray[0].skill=="SUBMITTED"){
+				 StatusState="Error"
 				 Status="Submitted"
+					 
+					 sap.ui.getCore().getElementById('SubmitTimeSheet').setVisible(false)
 			 }else{
+				 sap.ui.getCore().getElementById('SubmitTimeSheet').setVisible(true)
 				 StatusState="Success"
 				 Status="Local"				 
 			 }
 			 
 			 sap.ui.getCore().getElementById('HEADER').setTitle(formatDate(rowsArray[0].date))
+			  sap.ui.getCore().getElementById('TSComments').setTitle("Comments ")	
+			  sap.ui.getCore().getElementById('TSComments').setText(rowsArray[0].job)	
+						                
+						               
 			 selectedTimesheetDate=rowsArray[0].date;
 			 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 			 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
@@ -362,7 +389,7 @@ html5sql.process(SQLStatement,
 						}));
 				 },
 				 function(error, statement){
-					 alert("error"+statement) 
+					
 				 }        
 				);	
 	 },
@@ -381,7 +408,7 @@ html5sql.process(SQLStatement,
 
 
 }
-function createTimesheetHeader(d){
+function createTimesheetHeader(d,c){
 	var x =d.split("/")
 	
 	var tsdate= new Date(Number(x[2])+2000,x[0],x[1])
@@ -390,7 +417,7 @@ function createTimesheetHeader(d){
 	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()).toString() ) +  zeroFill1(tsdate.getDate().toString());
 	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
 								  '"'+TimesheetDate+'",'+
-								  '"",'+
+								  '"'+c+'",'+
 								  '"",'+
 								  '"header",'+
 								  '"",'+
@@ -405,17 +432,17 @@ function createTimesheetHeader(d){
 					
 				 },
 				 function(error, statement){
-					alert("Failed Created TS Entry"+statement)
+					
 				 }        
 				);
 	}
-function deleteTimesheetData(){
+function submitTimesheet(){
 
 	
-alert("intoDelete"+selectedTimesheetDate)
 
-	SQLStatement='Delete from TSData where date = "'+selectedTimesheetDate+'"'
 
+	SQLStatement="update  TSDATA set skill = 'SUBMITTED' where id = '"+selectedTimesheetId+"'",
+alert(SQLStatement)
 			
 
 			html5sql.process(SQLStatement,
@@ -448,6 +475,24 @@ res=selectedTsheetEntry.split(":")
 					 }        
 					); 
 		}
+function deleteTimesheetData(){
+
+
+			SQLStatement='Delete from TSData where date = "'+selectedTimesheetDate+'"'
+
+					
+
+					html5sql.process(SQLStatement,
+						 function(transaction, results, rowsArray){
+								
+								window.location.href="Timesheets.html"
+							
+						 },
+						 function(error, statement){
+							
+						 }        
+						);  
+			}
 function createTimesheetEntry(job,time,ot15,ot20){
 	var res=job.split("-")
 
@@ -467,7 +512,7 @@ function createTimesheetEntry(job,time,ot15,ot20){
 				
 				 },
 				 function(error, statement){
-					alert("Failed Created TS Entry")
+					
 				 }        
 				);
 	}
@@ -567,13 +612,13 @@ function BuildJobsList(){
 									
 							 },
 							 function(error, statement){
-								 alert("NP"+statement)
+							
 							 }        
 							);
 					
 			 },
 			 function(error, statement){
-				 alert("EJ"+statement)
+				
 			 }        
 			);
 
@@ -591,6 +636,18 @@ function BuildJobsList(){
 				footer  : new sap.m.Bar (
 						{
 							id : 'master-footer',
+							contentLeft : [
+												new sap.m.Button("SubmitTimeSheet", {
+								   					 text: "Submit",
+								   					 type: 	sap.m.ButtonType.Accept,
+								   					 visible: true,
+								   					 icon: "sap-icon://accept",
+								  					 press: [ function(){
+								  						submitTimesheet(); 
+								  						
+								  							}]
+													 })
+											],
 							contentMiddle : [
 											new sap.m.Button("AddNewTimeSheet", {
 							   					 text: "Create",

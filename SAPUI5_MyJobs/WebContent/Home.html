@@ -70,6 +70,53 @@ function addLogToDisplay(type, dt, message) {
 
 
 }
+function loadPinCodeValues(){
+	sap.ui.getCore().getElementById('PinCode').setValue(localStorage.getItem('PinCode'))	
+}
+var formPinCode = new sap.m.Dialog("dlgPinCode",{
+    title:"Set Login Pincode",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+				new sap.m.Button("dlgPinCodeSave", {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				   tap: [ function(oEvt) {		
+
+					    
+						updatePinCode(sap.ui.getCore().getElementById('PinCode').getValue());
+						
+					   
+						formPinCode.close()} ]
+				}),   
+				new sap.m.Button("dlgPinCodeCancel", {
+				    text: "Cancel",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formPinCode.close()
+						  } ]
+				})
+				],					
+    content:[
+ 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"Pin Code"}),
+							new sap.m.Input("PinCode",{type: sap.m.InputType.Number})
+							
+
+									 
+					
+			               
+			                 
+						]
+ 					})
+
+            ]
+ })
 function loadConfigValues(){
 	sap.ui.getCore().getElementById('configServer').setValue(localStorage.getItem('ServerName'))
 	sap.ui.getCore().getElementById('configReferenceFrequency').setValue(localStorage.getItem('SyncReferenceFrequency'))
@@ -82,6 +129,7 @@ function loadConfigValues(){
 	}
 	
 }
+
 var formConfig = new sap.m.Dialog("dlgConfig",{
     title:"Sync Config",
     modal: true,
@@ -323,7 +371,17 @@ var formSettings = new sap.m.Dialog("dlgSettings",{
 				minWidth : 1024,
 				maxContainerCols : 2,
 				content : [
-							
+				           new sap.m.Label({text:""}),
+							new sap.m.Button("pinCode", {
+							    text: "Set Pincode",
+							    type: 	sap.m.ButtonType.Accept,
+							    tap: [ function(oEvt) {		  
+									 
+							    	formSettings.close()
+							    	loadPinCodeValues()
+							    	formPinCode.open();
+									  } ]
+							}),
 			                new sap.m.Label({text:""}),
 							new sap.m.Button("SyncConfig", {
 							    text: "Sync Config",
@@ -426,7 +484,7 @@ function setCounts()
 			 function(transaction, results, rowsArray){
 				
 				sap.ui.getCore().byId("NotifsCnt").setNumber(rowsArray.length);
-				html5sql.process("SELECT * FROM MyMessages  ",
+				html5sql.process("SELECT * FROM MyMessages  where msgfromid <> 'SENTMSG' and type <> 'MYJOBSSYSMSG' and state !='1'",
 						 
 						 function(transaction, results, rowsArray){
 							
@@ -466,6 +524,15 @@ function setCounts()
 	);
 }
 
+var sysMessageContainer = new sap.m.panel(,{
+	content:[  
+			   		new sap.m.Text("text1", {
+			   			text: "system Message" 
+			   		})
+	         ]
+}
+
+			)
 
 var tileContainer = new sap.m.TileContainer({
 	tiles:
@@ -497,7 +564,7 @@ var tileContainer = new sap.m.TileContainer({
 		new sap.m.StandardTile('Timesheets',
 				{
 			title:"Timesheets",
-			icon:"sap-icon://time_account",
+			icon:"sap-icon://time-account",
 			number:'0',
 			press:[ function(){window.location.href="Timesheets.html"}]
 		
@@ -535,7 +602,7 @@ var page  = new sap.m.Page('homePage',{
 			contentLeft : [
 					]
 			}),
-    content: tileContainer,enableScrolling:false,showNavButton: "{device>/isPhone}" });
+    content: [tileContainer,sysMessageContainer],enableScrolling:false,showNavButton: "{device>/isPhone}" });
 
 var app = new sap.m.App();
 
