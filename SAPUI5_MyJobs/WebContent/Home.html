@@ -272,12 +272,13 @@ function forceTheSync()
 if(sap.ui.getCore().getElementById('synchroniseReference').setSelected()){
 
 	SetConfigParam('LASTSYNC_REFERENCE', "20120101010101");
-	syncTransactional()
+	syncReference()
+	
 
 };
 if(sap.ui.getCore().getElementById('synchroniseTransactional').setSelected()){
 	SetConfigParam('LASTSYNC_TRANSACTIONAL', "20120101010101");
-	syncReference()
+	syncTransactional()
 
 	};
 	if(sap.ui.getCore().getElementById('synchroniseUpload').setSelected()){
@@ -523,12 +524,26 @@ function setCounts()
 	 }        
 	);
 }
+function showSystemMessage(){
+	html5sql.process("SELECT * FROM MyMessages  where type = 'MYJOBSSYSMSG'  ;",
+			 function(transaction, results, rowsArray){
+				
+				if (rowsArray.length>0) {			
+					showMessage(rowsArray[0].msgsubject)
+						
+				 }
 
+			 },
+			 function(error, statement){
+				 //outputLogToDB(); 
+			 }        
+			);	
+}
 function showMessage(msg){
 	sap.m.MessageToast.show(msg, {
 		type: Error,
 		duration: Number(10000),
-		width: "100em",
+		width: "50em",
 		my: "center bottom",
 		at: "center bottom",		
 		autoClose: true,
@@ -610,7 +625,7 @@ var page  = new sap.m.Page('homePage',{
 			contentLeft : [
 					]
 			}),
-    content: [tileContainer],enableScrolling:false,showNavButton: "{device>/isPhone}" });
+    content: [tileContainer,new sap.m.Label({text:"xxxxx"})],enableScrolling:false,showNavButton: "{device>/isPhone}" });
 
 var app = new sap.m.App();
 
@@ -657,7 +672,7 @@ $(function() {
 	
 	
 	startBGSync()
-	showMessage("The System will be going down in 5 Hours")
+	showSystemMessage()
 })
 </Script>
 </body>

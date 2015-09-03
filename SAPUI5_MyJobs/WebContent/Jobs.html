@@ -16,6 +16,8 @@
 <script src="myresources/js/bgsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
+<script type="text/javascript" src="barcodescanner.js"></script>
 <style>
 .formHdr {
 				font-weight: bold;
@@ -43,6 +45,7 @@ var selectedFormQuestionGroup;
 var selectedFormQuestionGroupTitle;
 var CurrentOrderNo="";
 var CurrentOpNo="";
+var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
 	 itemPress:[function(oEvt) {	
@@ -1990,7 +1993,7 @@ function Scan(){
 	{
 	        //alert('scanning');
 	        
-	        var scanner = cordova.require("cordova/plugin/BarcodeScanner");
+	      
 
 	        scanner.scan( function (result) { 
 

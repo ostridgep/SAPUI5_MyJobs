@@ -313,11 +313,11 @@ function SetAllConfigParam(p1,v1,p2,v2,p3,v3,p4,v4,p5,v5){
 //  User Maintenance Functions
 //
 //*************************************************************************************************************************
-function CreateUser(muser,vehiclereg, u, p, employeeid){
+function CreateUser(muser,vehiclereg, u, p, employeeid, pincode){
 	
 	opMessage("Creating User "+muser+":"+vehiclereg+":"+u+":"+p+":"+employeeid);
 
-	html5sql.process("INSERT INTO MyUserDets (mobileuser , vehiclereg, user, password ,employeeid) VALUES ('"+muser+"','" +vehiclereg+"','" +u+"','" +p+"','" + employeeid+"');",
+	html5sql.process("INSERT INTO MyUserDets (mobileuser , vehiclereg, user, password ,employeeid, pincode) VALUES ('"+muser+"','" +vehiclereg+"','" +u+"','" +p+"','"+employeeid+"','" + pincode+"');",
 	 function(){
 		//alert("User Created");
 	 },
@@ -1328,7 +1328,8 @@ function emptyTables(type) {
 							SetConfigParam("LASTSYNC_TRANSACTIONAL", "20130316224900");
 							SetConfigParam("LASTSYNC_UPLOAD", "20130316214900");
 							SetConfigParam("SERVERNAME", "http://elderberry.uk.logica.com:8083/sap/bc/bsp/sap/zorderlist/");
-							requestDEMOData('TestData\\MySurveys.json');
+							CreateUser("MOBILED","AV54VSP", "MOBILED", "logica", "00059555", "0");
+							
 							requestDEMOData('TestData\\MyOrdersData.json');
 						
 							requestDEMOData('TestData\\MyNotificationsData.json');
@@ -1344,19 +1345,19 @@ function emptyTables(type) {
 							requestDEMOData('TestData\\funclocs.json');
 							requestDEMOData('TestData\\MyVehiclesData.json');
 						
-							requestDEMOData('TestData\\GASSurvey.json');
+							//requestDEMOData('TestData\\GASSurvey.json');
 						
-							requestDEMOData('TestData\\GASSurveyHdr.json');
+							//requestDEMOData('TestData\\GASSurveyHdr.json');
 							requestDEMOData('TestData\\MyMessagesData.json');
 							//
 							requestDEMOData('TestData\\TimeSheetNPJobs.json');
 							
-							requestDEMOData('TestData\\TimeSheetActivities.json');
-						
+							//requestDEMOData('TestData\\TimeSheetActivities.json');
+							requestDEMOData('TestData\\MySurveys.json');
 							
 							
 						
-							CreateUser("MOBILED","AV54VSP", "MOBILED", "logica", "00059555");
+							
 
 						 },
 						 function(error, statement){

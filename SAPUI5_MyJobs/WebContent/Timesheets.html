@@ -15,7 +15,9 @@
 <script src="myresources/js/bgsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
+
 <script type="text/javascript">
+jQuery.sap.require("sap.m.MessageBox");
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
 var currentStatus;
 var firstNotification="";
@@ -143,8 +145,7 @@ var formNewTimesheet = new sap.m.Dialog("dlgNewTsheet",{
 					    text: "Save",
 					    tap: [ function(oEvt) {		  
 							createTimesheetHeader(sap.ui.getCore().byId("NewTimesheetDate").getValue(),sap.ui.getCore().byId("Comments").getValue());  
-									formNewTimesheet.close()
-									window.location.href="Timesheets.html"
+									
 							  } ]
 					   
 					}),   
@@ -410,31 +411,49 @@ html5sql.process(SQLStatement,
 }
 function createTimesheetHeader(d,c){
 	var x =d.split("/")
-	
+	var SQLStatement="";
 	var tsdate= new Date(Number(x[2])+2000,x[0],x[1])
 	
 
 	TimesheetDate = zeroFill1(tsdate.getFullYear().toString()) + zeroFill1((tsdate.getMonth()).toString() ) +  zeroFill1(tsdate.getDate().toString());
-	SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
-								  '"'+TimesheetDate+'",'+
-								  '"'+c+'",'+
-								  '"",'+
-								  '"header",'+
-								  '"",'+
-								  '"",'+
-								  '"");'
+	SQLStatement="Select * from TSDATA where date = '"+TimesheetDate+"'"
 
+	html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+			if(rowsArray.length>0){
+				formNewTimesheet.close()
+				
+				showErrorMessage("Timesheet Error","Timesheet already exists for "+d)
 			
-
-			html5sql.process(SQLStatement,
-				 function(transaction, results, rowsArray){
-
+				}else{
+					SQLStatement='INSERT INTO TSData ( date , job , skill, activity, time, ot15, ot20) VALUES ( '+ 
+					  '"'+TimesheetDate+'",'+
+					  '"'+c+'",'+
+					  '"",'+
+					  '"header",'+
+					  '"",'+
+					  '"",'+
+					  '"");'
+					html5sql.process(SQLStatement,
+						 function(transaction, results, rowsArray){
 					
-				 },
-				 function(error, statement){
-					
-				 }        
-				);
+							formNewTimesheet.close()
+							window.location.href="Timesheets.html"
+						 },
+						 function(error, statement){
+							 formNewTimesheet.close()
+								
+						 }        
+						);
+				}
+		},
+		 function(error, statement){
+			formNewTimesheet.close()
+			
+		 }        
+		);
+		
+	
 	}
 function submitTimesheet(){
 

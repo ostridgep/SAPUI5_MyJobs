@@ -9,6 +9,23 @@ function showMessage(msg){
 
 	});
 }
+function showErrorMessage(title,msg){
+	sap.m.MessageToast.show(msg, {
+		type: Error,
+		duration: Number(3000),
+		width: "30em",
+		my: "center center",
+		at: "center center",		
+		autoClose: true,
+
+	});
+	  sap.m.MessageBox.show(msg, {
+		         icon: sap.m.MessageBox.Icon.ERROR ,
+		         title: title,
+		         actions: [sap.m.MessageBox.Action.OK]
+		       }
+		     );
+}
 function getDate()	{			
 				var currentdate = new Date(); 
 	return zeroFill1(currentdate.getFullYear().toString()) + zeroFill1((currentdate.getMonth()+1).toString() ) + zeroFill1(currentdate.getDate().toString());
