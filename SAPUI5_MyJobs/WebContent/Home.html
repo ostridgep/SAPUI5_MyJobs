@@ -524,15 +524,23 @@ function setCounts()
 	);
 }
 
-var sysMessageContainer = new sap.m.panel(,{
-	content:[  
-			   		new sap.m.Text("text1", {
-			   			text: "system Message" 
-			   		})
-	         ]
-}
+function showMessage(msg){
+	sap.m.MessageToast.show(msg, {
+		type: Error,
+		duration: Number(10000),
+		width: "100em",
+		my: "center bottom",
+		at: "center bottom",		
+		autoClose: true,
 
-			)
+	});
+/* 	  sap.m.MessageBox.show(msg, {
+		         icon: sap.m.MessageBox.Icon.ERROR ,
+		         title: "System Message",
+		         //actions: [sap.m.MessageBox.Action.RETRY]
+		       }
+		     ); */
+}
 
 var tileContainer = new sap.m.TileContainer({
 	tiles:
@@ -602,7 +610,7 @@ var page  = new sap.m.Page('homePage',{
 			contentLeft : [
 					]
 			}),
-    content: [tileContainer,sysMessageContainer],enableScrolling:false,showNavButton: "{device>/isPhone}" });
+    content: [tileContainer],enableScrolling:false,showNavButton: "{device>/isPhone}" });
 
 var app = new sap.m.App();
 
@@ -649,6 +657,7 @@ $(function() {
 	
 	
 	startBGSync()
+	showMessage("The System will be going down in 5 Hours")
 })
 </Script>
 </body>
