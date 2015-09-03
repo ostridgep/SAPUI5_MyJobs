@@ -1330,25 +1330,25 @@ function emptyTables(type) {
 							SetConfigParam("SERVERNAME", "http://elderberry.uk.logica.com:8083/sap/bc/bsp/sap/zorderlist/");
 							CreateUser("MOBILED","AV54VSP", "MOBILED", "logica", "00059555", "0");
 							
-							requestDEMOData('TestData\\MyOrdersData.json');
+							//requestDEMOData('TestData\\MyOrdersData.json');
 						
-							requestDEMOData('TestData\\MyNotificationsData.json');
+							//requestDEMOData('TestData\\MyNotificationsData.json');
 						
-							requestDEMOData('TestData\\MyUsersData.json');
+							//requestDEMOData('TestData\\MyUsersData.json');
 							
-							requestDEMOData('TestData\\MyOrderObjectsData.json');	
+							//requestDEMOData('TestData\\MyOrderObjectsData.json');	
 							
-							requestDEMOData('TestData\\MyRefData.json');
+							//requestDEMOData('TestData\\MyRefData.json');
 							
-							requestDEMOData('TestData\\RefDataCodes.json');
+							//requestDEMOData('TestData\\RefDataCodes.json');
 							
-							requestDEMOData('TestData\\funclocs.json');
+							//requestDEMOData('TestData\\funclocs.json');
 							requestDEMOData('TestData\\MyVehiclesData.json');
 						
 							//requestDEMOData('TestData\\GASSurvey.json');
 						
 							//requestDEMOData('TestData\\GASSurveyHdr.json');
-							requestDEMOData('TestData\\MyMessagesData.json');
+							//requestDEMOData('TestData\\MyMessagesData.json');
 							//
 							requestDEMOData('TestData\\TimeSheetNPJobs.json');
 							
@@ -1690,7 +1690,10 @@ function orderCB(MyOrders){
 
 html5sql.process(sqlstatement,
 						 function(){
-							 //alert("Success inserted Orders Tables");
+							var x = window.location.href.split("/")
+							if(x[x.length-1]=="Home.html"){
+								setCounts()
+							}
 						 },
 						 function(error, statement){
 							 opMessage("Error: " + error.message + " when processing " + statement);
@@ -1917,6 +1920,10 @@ opMessage("Callback Notifications triggured");
 			//("alert updateing Texts");
 			html5sql.process(sqlstatement,
 							 function(transaction, results, rowsArray){
+								var x = window.location.href.split("/")
+								if(x[x.length-1]=="Home.html"){
+									setCounts()
+								}
 								html5sql.process("select * from MyNotifications",
 												 function(transaction, results, rowsArray){
 													 for (var n = 0; n < rowsArray.length; n++) {
@@ -2592,7 +2599,10 @@ var sqlstatement="";
 					
 			html5sql.process(sqlstatement,
 				 function(){
-					 //alert("Success - Finished Loading Messages");
+					var x = window.location.href.split("/")
+					if(x[x.length-1]=="Home.html"){
+						setCounts()
+					}
 				 },
 				 function(error, statement){
 					 //opMessage("Error: " + error.message + " when processing " + statement);

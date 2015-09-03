@@ -45,7 +45,7 @@ var selectedFormQuestionGroup;
 var selectedFormQuestionGroupTitle;
 var CurrentOrderNo="";
 var CurrentOpNo="";
-var scanner = cordova.require("cordova/plugin/BarcodeScanner");
+//var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
 	 itemPress:[function(oEvt) {	
@@ -1991,7 +1991,7 @@ html5sql.process(sqlstatement,
 function Scan(){
 
 	{
-	        //alert('scanning');
+		var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 	        
 	      
 
