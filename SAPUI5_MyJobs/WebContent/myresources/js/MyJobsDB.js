@@ -1328,7 +1328,7 @@ function emptyTables(type) {
 							SetConfigParam("LASTSYNC_TRANSACTIONAL", "20130316224900");
 							SetConfigParam("LASTSYNC_UPLOAD", "20130316214900");
 							SetConfigParam("SERVERNAME", "http://elderberry.uk.logica.com:8083/sap/bc/bsp/sap/zorderlist/");
-							CreateUser("MOBILED","AV54VSP", "MOBILED", "logica", "00059555", "0");
+							
 							
 							//requestDEMOData('TestData\\MyOrdersData.json');
 						
@@ -1354,11 +1354,12 @@ function emptyTables(type) {
 							
 							//requestDEMOData('TestData\\TimeSheetActivities.json');
 							requestDEMOData('TestData\\MySurveys.json');
-							
+							busycreateDB.close()
+							formLogin.open()
 							
 						
 							
-
+ 
 						 },
 						 function(error, statement){
 							 
@@ -1428,15 +1429,15 @@ function resetTables() {
 
 					html5sql.process(sqlstatement,
 					 function(){
-						requestDEMOData('TestData\\GASSurvey.json');
-						requestDEMOData('TestData\\GASSurveyHdr.json');
-						requestDEMOData('TestData\\TimeSheetNPJobs.json');
-						requestDEMOData('TestData\\TimeSheetActivities.json');
+						//requestDEMOData('TestData\\GASSurvey.json');
+						//requestDEMOData('TestData\\GASSurveyHdr.json');
+						//requestDEMOData('TestData\\TimeSheetNPJobs.json');
+						//requestDEMOData('TestData\\TimeSheetActivities.json');
 						requestDEMOData('TestData\\MySurveys.json');
 						SetConfigParam('LASTSYNC_REFERENCE', "20120101010101");
 						SetConfigParam('LASTSYNC_TRANSACTIONAL', "20120101010101");
-						syncReference();
-						syncTransactional();
+						//syncReference();
+						//syncTransactional();
 						
 
 
@@ -1920,7 +1921,7 @@ opMessage("Callback Notifications triggured");
 			//("alert updateing Texts");
 			html5sql.process(sqlstatement,
 							 function(transaction, results, rowsArray){
-								var x = window.location.href.split("/")
+								var x = window.location.href.split
 								if(x[x.length-1]=="Home.html"){
 									setCounts()
 								}
@@ -2476,7 +2477,7 @@ function getEquips(){
 }
 function userCB(MyUsers){
 var sqlstatement="";		
-
+var MyEmployeeID=""
 	if(MyUsers.user.length>0){
 			if(syncReferenceDetsUpdated){
 				localStorage.setItem('LastSyncReferenceDetails',localStorage.getItem('LastSyncReferenceDetails')+', Users:'+String(MyUsers.user.length));
@@ -2489,7 +2490,9 @@ var sqlstatement="";
 			opMessage("Loading"+MyUsers.user.length+" Existing Users");
 			for(var cntx=0; cntx < MyUsers.user.length ; cntx++)
 				{	
-
+				if(MyUsers.user[cntx].userid==localStorage.getItem('MobileUser')){
+					localStorage.setItem('EmployeeID',MyUsers.user[cntx].employeeno)
+				}
 				sqlstatement+='INSERT INTO MyRefUsers (userid , scenario , plant , workcenter , plannergroup , plannergroupplant, storagegroup, storageplant, partner, partnerrole, funclocint, funcloc, compcode, employeeno, equipment, firstname, lastname, telno ) VALUES ('+ 
 					'"'+MyUsers.user[cntx].userid +'",'+  
 					'"'+MyUsers.user[cntx].scenario +'",'+   
@@ -2508,15 +2511,20 @@ var sqlstatement="";
 					'"'+MyUsers.user[cntx].equipment +'",'+  
 					'"'+MyUsers.user[cntx].firstname +'",'+  
 					'"'+MyUsers.user[cntx].lastname+'",'+  
-					'"'+MyUsers.user[cntx].telno+'");';
-					
-					
-
+					'"'+MyUsers.user[cntx].telno+'");';			
 				}	
 
 			html5sql.process(sqlstatement,
 				 function(){
-					 //alert("Success - Finished Loading Orders");
+						sqlstatement="UPDATE MyUserDets SET employeeid = '"+localStorage.getItem('EmployeeID')+"' WHERE mobileuser = '"+localStorage.getItem('MobileUser')+"';";
+						
+						html5sql.process(sqlstatement,
+						 function(){
+						},
+						 function(error, statement){
+							opMessage("Error: " + error.message + " when updateing Pincode " + statement);
+						 }        
+						);
 				 },
 				 function(error, statement){
 					 opMessage("Error: " + error.message + " when processing " + statement);

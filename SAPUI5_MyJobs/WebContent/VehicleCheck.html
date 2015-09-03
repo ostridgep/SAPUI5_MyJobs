@@ -21,6 +21,15 @@ var vehicleList = new sap.m.List("vehicleList",{
 	 itemPress:[function(oEvt) {
 		 sap.ui.getCore().getElementById('Description').setValue(oEvt.getParameter("listItem").getTitle())
 		 sap.ui.getCore().getElementById('Reg').setValue(oEvt.getParameter("listItem").getId())
+		 
+						
+						html5sql.process("UPDATE MyUserDets SET vehiclereg = '"+oEvt.getParameter("listItem").getId()+"' WHERE mobileuser = '"+localStorage.getItem('MobileUser')+"';",
+						 function(){
+						},
+						 function(error, statement){
+							opMessage("Error: " + error.message + " when updateing Pincode " + statement);
+						 }        
+						);
 		 formSelectVehicle.close() 
 }]
 		  });

@@ -14,6 +14,7 @@
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
 <script type="text/javascript">
+
 function checkLogin(n)
 {
 var SQLStatement=""
@@ -127,14 +128,20 @@ var formNewUser = new sap.m.Dialog("dlgNewUser",{
 				   text: "Save",
 				   type: sap.m.ButtonType.Accept,
 				   tap: [ function(oEvt) {		
-						alert("Create User")
-					    formNewUser.close()} ]
+					    CreateUser(sap.ui.getCore().byId("NewUser").getValue(),"", sap.ui.getCore().byId("NewUser").getValue(),
+					    		sap.ui.getCore().byId("NewPassword").getValue(), "0", sap.ui.getCore().byId("NewPinCode").getValue())
+					    		
+					    		formNewUser.close()
+					    		
+				  					 }
+					    ]
+					
 				}),   
 				new sap.m.Button({
 				    text: "Cancel",
 				    type: sap.m.ButtonType.Reject,
 				    tap: [ function(oEvt) {		  
-						alert("Cancel") 
+						
 				    	formNewUser.close()
 						  } ]
 				})
@@ -146,8 +153,10 @@ var formNewUser = new sap.m.Dialog("dlgNewUser",{
 				content : 	[							
 			                new sap.m.Label({text:"User"}),
 							new sap.m.Input("NewUser",{type: sap.m.InputType.Input}),
-							new sap.m.Label({text:"password"}),
-							new sap.m.Input("NewPassword",{type: sap.m.InputType.Password})              
+							new sap.m.Label({text:"Password"}),
+							new sap.m.Input("NewPassword",{type: sap.m.InputType.Password}),
+							new sap.m.Label({text:"Pin Code"}),
+							new sap.m.Input("NewPinCode",{type: sap.m.InputType.Password})      
 							]
  				})
             ]
@@ -255,6 +264,12 @@ var formSettings = new sap.m.Dialog("dlgSettings",{
 
             ]
  })
+var busycreateDB = new sap.m.BusyDialog('busycreateDB',{text:'Createing the Database', title: 'Database',
+	onAfterRendering:function(){
+		alert("hello")
+	}
+})
+
 var formCreateDB = new sap.m.Dialog("dlgCreateDB",{
     title:"Database",
     modal: true,
@@ -286,8 +301,8 @@ var formCreateDB = new sap.m.Dialog("dlgCreateDB",{
 	html5sql.process("SELECT * from MyUserDets",
 			 function(transaction, results, rowsArray){
 					
-					if(rowsArray[0].pincode>100){
-						
+					if(rowsArray.length > 0 && rowsArray[0].pincode>100){
+						formLogin.destroyContent()
 						formLogin.addContent(
 						new sap.ui.layout.form.SimpleForm({
 							title: "Enter your Pincode",
@@ -371,7 +386,7 @@ var formLogin = new sap.m.Dialog("dlgLogin",{
     content:[
  			
             ],
-            afterOpen:function(){
+            beforeOpen:function(){
             	prepareLogin()
             }
  })
@@ -453,7 +468,12 @@ $(function() {
 			function(transaction, results, rowsArray){
 				
 				if( rowsArray.length <10) {
-					sap.m.MessageBox.show("Database does not exist, Create?", {
+
+					busycreateDB.open()
+
+					createDB(1)
+					
+/* 					sap.m.MessageBox.show("Database does not exist, Create?", {
 				         icon: sap.m.MessageBox.Icon.ERROR ,
 				         title: "Database Error",
 				         actions: [sap.m.MessageBox.Action.YES],
@@ -462,7 +482,7 @@ $(function() {
 								formLogin.open()
 							}
 				       }
-				     );
+				     ); */
 					
 					}else{
 						 
