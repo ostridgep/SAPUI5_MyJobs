@@ -20,6 +20,7 @@ html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);
 
 var currentStatus;
 var firstNotification="";
+var selectedMess=""
 var EmployeeID = localStorage.getItem("EmployeeID")
 var detailFooter = new sap.m.Bar({
 		contentRight : [
@@ -27,6 +28,7 @@ var detailFooter = new sap.m.Bar({
 						]
 		
 	})
+
 var formMap = new sap.m.Dialog("dlgMap",{
     title:"Location",
    
@@ -127,7 +129,7 @@ var formViewMessage = new sap.m.Dialog("dlgMessage",{
 					new sap.m.Button( {
 					    text: "OK",
 					    tap: [ function(oEvt) {		  
-							 
+							setRead()
 					    	formViewMessage.close()} ]   
 					})
 					],					
@@ -293,13 +295,13 @@ function buildMenu(){
 function buildDetailsContent(type){
 	
 	if(type=="ReceivedMessages"){
-		buildReceived();
+		buildReceivedTable();
 	}else 	if(type=="SentMessages"){
-		buildSent();
+		buildSentTable();
 	}else 	if(type=="SystemMessages"){
-		buildSystem();
+		buildSystemTable();
 	}else 	if(type=="AddressBook"){
-		buildAddressBook();
+		buildAddressBookTable();
 	}else 	if(type=="Team"){
 		formMap.open();
 	}
@@ -307,7 +309,7 @@ function buildDetailsContent(type){
 
 function buildReceived(){	
 	var tableReceived =	new sap.m.Table("ReceivedTable",{
-
+		visible: true,
 		itemPress:[function(oEvt) {			  
 				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
 					}
@@ -315,6 +317,7 @@ function buildReceived(){
 			 ],
 
 		columns:[
+
 		         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
 		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
 		         new sap.m.Column({header: new sap.m.Label({text:"From"}),
@@ -323,15 +326,28 @@ function buildReceived(){
 		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
 	      	     ]
 	})
+return tableReceived
+}
+function buildReceivedTable(){	
+	var msgFlag=""
+	opTable=sap.ui.getCore().getElementById('ReceivedTable');
+	opTable.destroyItems();
 	html5sql.process("SELECT * FROM MyMessages where msgfromid <> 'SENTMSG' and type <> 'MYJOBSSYSMSG' ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;			
-				tableReceived.removeAllItems();
+				if(rowsArray[n].state=="0"){
+					 msgFlag="sap-icon://email"
+				
+				}else{
+					msgFlag="sap-icon://email-read"
+				}
 				while (n < rowsArray.length) {				
-					tableReceived.addItem (new sap.m.ColumnListItem('RECEIVED:'+rowsArray[n].id,{
+					opTable.addItem (new sap.m.ColumnListItem('RECEIVED:'+rowsArray[n].id,{
 						type: "Active",
+						icon:msgFlag,
 						cells : 
 							[
+							
 							new sap.m.Text({text: rowsArray[n].date+" "+rowsArray[n].time}),
 				            new sap.m.Text({text: rowsArray[n].msgfromname}),						
 				            new sap.m.Text({text: rowsArray[n].msgsubject})   
@@ -339,8 +355,10 @@ function buildReceived(){
 						}))
 					n++;
 				 }
-				oDetailPage.destroyContent()
-				oDetailPage.addContent(tableReceived)
+				sap.ui.getCore().getElementById('ReceivedTable').setVisible(true);
+				sap.ui.getCore().getElementById('SentTable').setVisible(false);
+				sap.ui.getCore().getElementById('SystemTable').setVisible(false);
+				sap.ui.getCore().getElementById('AddressTable').setVisible(false)
 				oDetailPage.setFooter(messageFooter)
 				oDetailPage.setTitle("Received Messages")
 			 },
@@ -351,7 +369,7 @@ function buildReceived(){
 }
 function buildSent(){
 	var tableSent =	new sap.m.Table("SentTable",{
-
+		visible: false,
 		itemPress:[function(oEvt) {			  
 				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
 					}
@@ -359,6 +377,7 @@ function buildSent(){
 			 ],
 
 		columns:[
+
 		         new sap.m.Column({header: new sap.m.Label({text:"Date"}),
 		        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
 		         new sap.m.Column({header: new sap.m.Label({text:"To"}),
@@ -367,12 +386,17 @@ function buildSent(){
 		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
 	      	     ]
 	})
+	return tableSent
+}
+function buildSentTable(){
+	opTable=sap.ui.getCore().getElementById('SentTable');
+	opTable.destroyItems();
 	html5sql.process("SELECT * FROM MyMessages  where msgfromid = 'SENTMSG'  ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;				
-				tableSent.removeAllItems();
+				
 				while (n < rowsArray.length) {			
-					tableSent.addItem(new sap.m.ColumnListItem('SENT:'+rowsArray[n].id,{
+					opTable.addItem(new sap.m.ColumnListItem('SENT:'+rowsArray[n].id,{
 						type: "Active",
 						cells : 
 							[
@@ -383,8 +407,10 @@ function buildSent(){
 						}))
 					n++;
 				 }
-				oDetailPage.destroyContent()
-				oDetailPage.addContent(tableSent)
+				sap.ui.getCore().getElementById('ReceivedTable').setVisible(false);
+				sap.ui.getCore().getElementById('SentTable').setVisible(true);
+				sap.ui.getCore().getElementById('SystemTable').setVisible(false);
+				sap.ui.getCore().getElementById('AddressTable').setVisible(false)
 				oDetailPage.setFooter(messageFooter)
 				oDetailPage.setTitle("Sent Messages")
 			 },
@@ -395,7 +421,7 @@ function buildSent(){
 }
 function buildSystem(){
 	var tableSystem =	new sap.m.Table("SystemTable",{
-
+		visible: false,
 		itemPress:[function(oEvt) {			  
 				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
 					}
@@ -411,12 +437,17 @@ function buildSystem(){
 		        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
 	      	     ]
 	})
+	return tableSystem
+}
+function buildSystemTable(){
+	opTable=sap.ui.getCore().getElementById('SystemTable');
+	opTable.destroyItems();
 	html5sql.process("SELECT * FROM MyMessages  where type = 'MYJOBSSYSMSG'  ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;
-				tableSystem.removeAllItems();
+				
 				while (n < rowsArray.length) {			
-					tableSystem.addItem(new sap.m.ColumnListItem('SYSTEM:'+rowsArray[n].id,{
+					opTable.addItem(new sap.m.ColumnListItem('SYSTEM:'+rowsArray[n].id,{
 						type: "Active",
 						cells : 
 							[
@@ -427,8 +458,11 @@ function buildSystem(){
 						}))
 					n++;
 				 }
-				oDetailPage.destroyContent()
-				oDetailPage.addContent(tableSystem)	
+				sap.ui.getCore().getElementById('ReceivedTable').setVisible(false);
+				sap.ui.getCore().getElementById('SentTable').setVisible(false);
+				sap.ui.getCore().getElementById('SystemTable').setVisible(true);
+				sap.ui.getCore().getElementById('AddressTable').setVisible(false)
+
 				oDetailPage.setFooter(messageFooter)
 				oDetailPage.setTitle("System Messages")
 			 },
@@ -438,8 +472,9 @@ function buildSystem(){
 			);	
 }
 function buildAddressBook(){
-	var tableAddressBook =	new sap.m.Table("AddressBookTable",{
 
+	var tableAddressBook =	new sap.m.Table("AddressTable",{
+		visible: false,
 		itemPress:[function(oEvt) {			  
 				     prepareDisplayMessage(oEvt.getParameter("listItem").getId())
 					}
@@ -455,13 +490,18 @@ function buildAddressBook(){
 		        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true })       	                         
 	      	     ]
 	})
+	return tableAddressBook
+}
+function buildAddressBookTable(){
+	opTable=sap.ui.getCore().getElementById('AddressTable');
+	opTable.destroyItems();
 	html5sql.process("SELECT * FROM MyRefUsers  ;",
 			 function(transaction, results, rowsArray){
 				var n = 0;
 				
-				tableAddressBook.removeAllItems();
+				
 				while (n < rowsArray.length) {			
-					tableAddressBook.addItem(new sap.m.ColumnListItem('ADDRESSBOOK:'+rowsArray[n].id,{
+					opTable.addItem(new sap.m.ColumnListItem('ADDRESSBOOK:'+rowsArray[n].id,{
 						type: "Active",
 						cells : 
 							[
@@ -472,8 +512,10 @@ function buildAddressBook(){
 						}))
 					n++;
 				 }
-				oDetailPage.destroyContent()
-				oDetailPage.addContent(tableAddressBook)		
+				sap.ui.getCore().getElementById('ReceivedTable').setVisible(false);
+				sap.ui.getCore().getElementById('SentTable').setVisible(false);
+				sap.ui.getCore().getElementById('SystemTable').setVisible(false);
+				sap.ui.getCore().getElementById('AddressTable').setVisible(true)
 				oDetailPage.setFooter(detailFooter)
 				oDetailPage.setTitle("Address Book")
 			 },
@@ -487,15 +529,15 @@ function setCounts()
 	var rcvcnt = 0;
 	var sndcnt = 0;
 	var syscnt = 0;
-	sap.ui.getCore().byId("Timesheets").setNumber(rowsArray.length);
+	
 	html5sql.process("SELECT * FROM MyMessages",
 	 function(transaction, results, rowsArray){
 			
 			n=0;
 			while(n < rowsArray.length){
-				if(msgfromid == 'SENTMSG'  ){
+				if(rowsArray[n].msgfromid == 'SENTMSG'  ){
 					sndcnt++;
-				}else if(msgfromid == 'SYSTEM'  ){
+				}else if(rowsArray[n].msgfromid == 'SYSTEM'  ){
 					syscnt++;
 				}else{
 					rcvcnt++;
@@ -503,9 +545,9 @@ function setCounts()
 				n++;
 			}
 
-			document.getElementById("ReceivedMessages").setNumber(rcvcnt);
-			document.getElementById("SentMessages").setNumber(sndcnt);
-			document.getElementById("SystemMessages").setNumber(syscnt);
+			sap.ui.getCore().getElementById("ReceivedMessages").setNumber(rcvcnt);
+			sap.ui.getCore().getElementById("SentMessages").setNumber(sndcnt);
+			sap.ui.getCore().getElementById("SystemMessages").setNumber(syscnt);
 
 
 
@@ -605,6 +647,7 @@ function prepareDisplayMessage(tid){
 	res=tid.split(":")
 	var mtype=res[0]
 	var id = res[1]
+	selectedMess=id;
 	var	SQLStatement='Select * from MyMessages where id = "'+id+'"'
 
 
@@ -676,12 +719,16 @@ function CreateTheMessage()
 
 		html5sql.process(SQLStatement,
 			 function(transaction, results, rowsArray){
-	
-				buildSent()
+			if(oDetailPage.getTitle()=="Sent Messages"){
+				buildDetailsContent("SentMessages")
+			}
+				
+			
+				setCounts()
 				
 			 },
 			 function(error, statement){		
-				
+				//alert("err-"+statement)
 			
 			 }        
 			);
@@ -691,7 +738,8 @@ function CreateTheMessage()
 			"detail",
 			{
 				title : "",
-				content : [],
+				footer: messageFooter,
+				content : [buildReceived(),buildSent(),buildSystem(),buildAddressBook(),buildReceivedTable()],
 				showNavButton: true,
 					 
 					 navButtonPress: function() {				                  

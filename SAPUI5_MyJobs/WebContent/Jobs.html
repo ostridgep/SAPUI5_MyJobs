@@ -45,6 +45,7 @@ var selectedFormQuestionGroup;
 var selectedFormQuestionGroupTitle;
 var CurrentOrderNo="";
 var CurrentOpNo="";
+var currentOrderListItem="";
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
@@ -101,11 +102,20 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
     buttons: [
 					new sap.m.Button( {
 					    text: "Save",
-					    tap: [ function(oEvt) {		  
-							/* createTimeConf(AbsenceType,startDate,endDate,
-									sap.ui.getCore().byId("Days").getValue(),
-									sap.ui.getCore().byId("Description").getValue(),
-									sap.ui.getCore().byId("Comments").getValue());  */
+					    tap: [ function(oEvt) {	
+					    	var xntype=sap.ui.getCore().byId("NewType").getSelectedItem().getKey().split("|")
+					    	var xgroup=sap.ui.getCore().byId("NewGroup").getSelectedItem().getKey().split("|")
+					    	var xcode=sap.ui.getCore().byId("NewCode").getSelectedItem().getKey().split("|")
+					    	var xpriority=sap.ui.getCore().byId("NewPriority").getSelectedItem().getKey().split("|")
+					    	
+							createNotification(xntype[0],xpriority[0],xgroup[0],xcode[0],sap.ui.getCore().byId("NewGroup").getSelectedItem().getText(),
+								sap.ui.getCore().byId("NewCode").getSelectedItem().getText(),sap.ui.getCore().byId("NewDescription").getValue(),
+								sap.ui.getCore().byId("NewDetails").getValue(),
+								sap.ui.getCore().byId("NewNotifStart").getValue(),
+								sap.ui.getCore().byId("NewFuncLoc").getValue(),
+								sap.ui.getCore().byId("NewEquipment").getValue())
+
+
 									formNewNotif.close()
 							  } ]
 					   
@@ -508,11 +518,13 @@ var standardList  = new sap.m.List("JobList",
       buttons: [
 					new sap.m.Button( {
 					    text: "Save",
-					    tap: [ function(oEvt) {		  
-							createTimeConf(AbsenceType,startDate,endDate,
-									sap.ui.getCore().byId("Days").getValue(),
-									sap.ui.getCore().byId("Description").getValue(),
-									sap.ui.getCore().byId("Comments").getValue()); 
+					    tap: [ function(oEvt) {	
+					    	
+					    	
+					    	createTConf(CurrentOrderNo,CurrentOpNo,sap.ui.getCore().byId("Employee").getSelectedItem().getKey(),sap.ui.getCore().byId("tconfType").getSelectedButton(),
+					    			sap.ui.getCore().byId("tconfStart").getValue(),sap.ui.getCore().byId("tconfEnd").getValue(),sap.ui.getCore().byId("Duration").getValue(),
+					    			sap.ui.getCore().byId("tconfType").getSelectedButton(),sap.ui.getCore().byId("Description").getValue())
+			
 							formTimeConf.close()
 							  } ]
 					   
@@ -540,20 +552,7 @@ var standardList  = new sap.m.List("JobList",
 								new sap.m.Select('Employee',{
 									
 									items: [
-										new sap.ui.core.Item({
-											key: "1",
-											text: "Jimmy Hendrix"
-										}),
-
-										new sap.ui.core.Item({
-											key: "2",
-											text: "Charley Farley"
-										}),
-
-										new sap.ui.core.Item({
-											key: "3",
-											text: "Keith Moon"
-										})
+										
 									],
 
 									change: function(oControlEvent) {
@@ -757,7 +756,7 @@ function prepareChangeStatus(){
 function changeStatus(Status){
 	var StatusState;
 	var StatusIcon;
-	
+
 	 if(Status=="Job Init"){
 		 StatusState=sap.ui.core.ValueState.None
 		 StatusIcon="create"
@@ -784,14 +783,22 @@ function changeStatus(Status){
 		 StatusIcon="building"
 	 }
 	currentStatus=Status;
+	
 	 sap.ui.getCore().getElementById('HEADER').destroyStatuses()
 	 sap.ui.getCore().getElementById('HEADER').addStatus( new sap.m.ObjectStatus({
 			text : Status,
 			icon : sap.ui.core.IconPool.getIconURI(StatusIcon),
-
 			state : StatusState
 	 }))
+	 //alert(currentOrderListItem)
+	 sap.ui.getCore().getElementById(currentOrderListItem).destroyFirstStatus()
+	 sap.ui.getCore().getElementById(currentOrderListItem).setFirstStatus( new sap.m.ObjectStatus({
+			text : Status,
+			state : StatusState
+	 }))
+
 }
+
 function getJobType(x){
 	if (x=='124699'){
 		return "Quotation for Clean Water (Development Site)"
@@ -958,7 +965,7 @@ return objectHeader;
 
 
 function  buildDetailsContent(aid){
-
+currentOrderListItem=aid;
 var res = aid.split(":")
 var orderno=res[1];
 var opno=res[2];
@@ -1038,7 +1045,7 @@ html5sql.process(SQLStatement,
 			 				 currentPostcode=rowsArray[0].postcode;
 			 getLatLonFromPcode(currentPostcode)
 			 currentJob="job:"+rowsArray[0].orderno+':'+rowsArray[0].opno;
-			 CurrentOrderNo=CurrentOrderNo
+			 CurrentOrderNo=rowsArray[0].orderno
 			 CurrentOpNo=rowsArray[0].opno
 			 currentStatus=rowsArray[0].opstat;
 			 if(currentStatus=="Job Finished"){
@@ -1918,6 +1925,7 @@ $(function() {
         }  
 		
 	BuildNotificationTypes()
+	BuildTCEmployees()
 	
 	});
 function selectListDefault(){
@@ -2012,6 +2020,32 @@ function Scan(){
 	        } );
 	    }
 	}
+function BuildTCEmployees(){
+	var SQLStatement="";
+	var FirstVal="";
+	SQLStatement="SELECT * from Myrefusers "
+
+	
+		html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+				//alert(rowsArray.length)
+				for (var n = 0; n < rowsArray.length; n++) {
+					item = rowsArray[n];
+					sap.ui.getCore().getElementById("Employee").addItem(
+							new sap.ui.core.Item({
+								key: "Emp|"+item.id+"|"+item.employeeno, 
+								text: item.firstname+" "+item.lastname
+							}))
+					
+				}
+					
+				
+		 },
+		 function(error, statement){
+			
+		 }        
+		);
+}
 function BuildNotificationTypes(){
 
 	var HTMLToOutput='';

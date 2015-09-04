@@ -76,6 +76,17 @@ function formatDateTime1(dt){
 	formatteddt=dt.substring(6,8)+"-"+dt.substring(4,6)+"-"+dt.substring(0,4)+" "+dt.substring(9,11)+":"+dt.substring(11,13)+":"+dt.substring(13,15);
 	return formatteddt;
 	}
+function convertDateTimePicker(dt)
+{
+	var sd =dt.split(",")
+	var x=sd[0].split("/")
+	var st=sd[1].split(":")
+	var ndate= new Date(Number(x[2])+2000,x[0],x[1])
+	
+
+	var formattedDate=zeroFill1(ndate.getFullYear().toString()) + zeroFill1((ndate.getMonth()).toString() ) +  zeroFill1(ndate.getDate().toString())+"|"+zeroFill1(st[0].substring(1,st[0].length))+st[1].substring(0,2)+"00"
+return formattedDate
+	}
 function zeroFill1(x){
     return (x < 10) ? ("0" + x) : x;   
 }
