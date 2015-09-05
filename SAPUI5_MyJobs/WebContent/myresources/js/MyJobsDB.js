@@ -450,6 +450,25 @@ var ReportedBy=localStorage.getItem("MobileUser");
 	 }        
 	)
 }
+function createJobAnswers(orderno , opno , item , task , value )
+{
+	var ReportedOn=getDate()+" "+getTime();
+	var ReportedBy=localStorage.getItem("MobileUser");
+	
+
+
+	html5sql.process("INSERT INTO  JobAnswers (orderno , opno, user, updatedate, item , task , value) VALUES ("+
+					 orderno+"','"+opno+"','"+ReportedBy+"','"+ReportedOn+"','"+item+"','"+task+"','"+value+"');",
+	 function(transaction, results, rowsArray){
+
+		
+	 },
+	 function(error, statement){
+
+		
+	 }        
+	)
+}
 
 
 function SetLastSyncDetails(paramName){
@@ -1034,10 +1053,10 @@ function createTConf(order,opno,empid,type,startdate,enddate,duration,finalconf,
 	html5sql.process("INSERT INTO  MyTimeConfs (orderno , opno,type, confno , description , date , time , enddate, endtime, duration, empid, final , datestamp, user, state) VALUES ("+
 			 "'"+order+"','"+opno+"','"+xtctype+"','NEW','"+comments+"','"+xstartdate[0]+"','"+xstartdate[1]+"','"+xenddate[0]+"','"+xenddate[1]+"','"+duration+"','"+xempid[2]+"','"+xfinalconf+"','"+getDate()+" "+getTime()+"','"+localStorage.getItem("MobileUser")+"','');",
 	 function(){
-		alert("TC Good")
+		rebuildTimeConfs();
 	 },
 	 function(error, statement){
-		 alert("TC Bad"+statement)
+
 		opMessage("Error: " + error.message + " when createTConf processing " + statement);
 	 }        
 	);
@@ -2044,7 +2063,7 @@ opMessage("Callback sapCB triggured");
 			opMessage("Processing Update Response: ");
 //Handle Notification Create Response
 			if (MySAP.message[0].type=="createnotificationxx"){
-				alert(MySAP.message[0].type+":"+MySAP.message[0].recno+":"+MySAP.message[0].message+":"+MySAP.message[0].notifno)
+				//alert(MySAP.message[0].type+":"+MySAP.message[0].recno+":"+MySAP.message[0].message+":"+MySAP.message[0].notifno)
 				opMessage("-->Type= "+MySAP.message[0].type);
 				opMessage("-->row= "+MySAP.message[0].recno);
 				opMessage("-->Message= "+MySAP.message[0].message);
@@ -2076,7 +2095,7 @@ opMessage("Callback sapCB triggured");
 			}	
 //Handle Time Confirmation Create Response			
 			if (MySAP.message[0].type=="createtconf"){
-				alert(MySAP.message[0].type+":"+MySAP.message[0].confno+":"+MySAP.message[0].recno)
+				//alert(MySAP.message[0].type+":"+MySAP.message[0].confno+":"+MySAP.message[0].recno)
 				opMessage("-->Type= "+MySAP.message[0].type);
 				opMessage("-->confno= "+MySAP.message[0].confno);
 				if(MySAP.message[0].confno!="0000000000"){
@@ -2091,7 +2110,7 @@ opMessage("Callback sapCB triggured");
 			}
 //Handle Status Update Response
 			if (MySAP.message[0].type=="updatestatus"){
-				alert("-->UpdateStatus"+MySAP.message[0].orderno+":"+MySAP.message[0].opno+":"+MySAP.message[0].message+":"+MySAP.message[0].recno);
+				//alert("-->UpdateStatus"+MySAP.message[0].orderno+":"+MySAP.message[0].opno+":"+MySAP.message[0].message+":"+MySAP.message[0].recno);
 				opMessage("-->UpdateStatus");
 				opMessage("-->Orderno= "+MySAP.message[0].orderno);
 				opMessage("-->Opno= "+MySAP.message[0].opno);
@@ -2106,7 +2125,7 @@ opMessage("Callback sapCB triggured");
 			}	
 //Handle Create Notification Response
 			if (MySAP.message[0].type=="createnotification"){
-				alert(MySAP.message[0].type+":"+MySAP.message[0].recno+":"+MySAP.message[0].message+":"+MySAP.message[0].notifno)
+				//alert(MySAP.message[0].type+":"+MySAP.message[0].recno+":"+MySAP.message[0].message+":"+MySAP.message[0].notifno)
 				opMessage("-->Create Notification");
 				opMessage("-->NotifNo= "+MySAP.message[0].notifno);
 				opMessage("-->Message= "+MySAP.message[0].message);
@@ -2120,7 +2139,7 @@ opMessage("Callback sapCB triggured");
 		
 			}			
 			if (MySAP.message[0].type=="updatemessagereadstatus"){
-				alert("mess read-->"+MySAP.message[0].id+":"+MySAP.message[0].message)
+				//alert("mess read-->"+MySAP.message[0].id+":"+MySAP.message[0].message)
 				opMessage("-->UpdateMessage Read");
 				opMessage("-->ID= "+MySAP.message[0].id);
 				opMessage("-->Message= "+MySAP.message[0].message);
@@ -2136,7 +2155,7 @@ opMessage("Callback sapCB triggured");
 		
 			}	
 			if (MySAP.message[0].type=="messagesend"){
-				alert("mess send-->"+MySAP.message[0].id+":"+MySAP.message[0].message)
+				//alert("mess send-->"+MySAP.message[0].id+":"+MySAP.message[0].message)
 				opMessage("-->UpdateMessage Sent");
 				opMessage("-->ID= "+MySAP.message[0].id);
 				opMessage("-->Message= "+MySAP.message[0].message);

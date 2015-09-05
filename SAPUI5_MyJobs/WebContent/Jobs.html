@@ -45,6 +45,7 @@ var selectedFormQuestionGroup;
 var selectedFormQuestionGroupTitle;
 var CurrentOrderNo="";
 var CurrentOpNo="";
+var currentNotifNo="";
 var currentOrderListItem="";
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
@@ -62,6 +63,7 @@ select:[function(oEvt) {
 		  });
 var startFloc=""
 var selectedTab="";
+var TabsFieldCnt=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 var Longtext;
 var JobType=""
 var currentStatus;
@@ -96,7 +98,7 @@ var newEQField = 			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input
 }]});
 newEQField._getValueHelpIcon().setSrc("sap-icon://bar-code");
 var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
-    title:"Create Notification",
+    title:" Notification",
     modal: true,
     contentWidth:"1em",
     buttons: [
@@ -431,6 +433,16 @@ var detailFooter = new sap.m.Bar({
 										}]
 							 })
 						],
+						contentMiddle : [
+										new sap.m.Button("saveData", {
+											 text: "Save",
+											 visible:false,
+											 icon:"sap-icon://save",
+											 press: [ function(){
+												 saveTheData()
+													}]
+										 })
+										],
 						contentRight : [
 										new sap.m.Button("changeStatus", {
 											 text: "Status",
@@ -524,8 +536,9 @@ var standardList  = new sap.m.List("JobList",
 					    	createTConf(CurrentOrderNo,CurrentOpNo,sap.ui.getCore().byId("Employee").getSelectedItem().getKey(),sap.ui.getCore().byId("tconfType").getSelectedButton(),
 					    			sap.ui.getCore().byId("tconfStart").getValue(),sap.ui.getCore().byId("tconfEnd").getValue(),sap.ui.getCore().byId("Duration").getValue(),
 					    			sap.ui.getCore().byId("tconfType").getSelectedButton(),sap.ui.getCore().byId("Description").getValue())
-			
+							
 							formTimeConf.close()
+							rebuildTimeConfs()
 							  } ]
 					   
 					}),   
@@ -996,7 +1009,7 @@ html5sql.process(SQLStatement,
 	 function(transaction, results, rowsArray){
 
 		 if (rowsArray.length>0){
-			 notifno=rowsArray[0].notifno;
+			 currentNotifNo=rowsArray[0].notifno;
 			 JobType=rowsArray[0].notiftype;
 			 oDetailPage.destroyContent()
 			 oDetailPage.addContent(buildDetails())
@@ -1085,7 +1098,7 @@ html5sql.process(SQLStatement,
 
 				 buildDetailsTabContent(orderno,opno,"FORM",surveyID)
 			}else{
-			 html5sql.process("Select * from myitems where notifno = '"+notifno+"'",
+			 html5sql.process("Select * from myitems where notifno = '"+currentNotifNo+"'",
 					 function(transaction, results, rowsArray){
 				
 				 			cnt=0
@@ -1098,7 +1111,7 @@ html5sql.process(SQLStatement,
 				 			tabsid=tabsid+"END"
 				 			oDetailPage.addContent(buildDetailsP100Tabs(tabsdesc,tabsid))
 			 				
-			 				buildDetailsP100TabContent(orderno,opno,notifno,tabsid)
+			 				buildDetailsP100TabContent(orderno,opno,currentNotifNo,tabsid)
 			 	},
 				 function(error, statement){
 					 //outputLogToDB(); 
@@ -1486,7 +1499,9 @@ function formChanged(oEvt){
 function buildDetailsTabs(Jtype,surveyID){
 tabBar=null;
 formtab=null;
+sap.ui.getCore().getElementById('saveData').setVisible(false)
 	if(Jtype=="FORM"){
+		sap.ui.getCore().getElementById('saveData').setVisible(true)
 		 formtab=new sap.m.IconTabFilter( 'FORM',{
 	              key:'Form',
 	              tooltip: 'Form',
@@ -1605,17 +1620,17 @@ function buildDetailsP100Tabs(tabsdesc,tabsid){
 	
 tabitemsdesc=tabsdesc.split(":")
 tabitemsid=tabsid.split(":")
+selectedTab="Task:"+tabitemsid[0]
+
 	var tabBar  = new sap.m.IconTabBar('tabBar',
 			{
 				expanded:'{device>/isNoPhone}',
 
 				select:[function(oEvt) {	
-					selectedTab=oEvt.getParameters().key;
-					  if(oEvt.getParameters().key=="Status"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="Task"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="MPoint"){oDetailPage.setFooter(detailFooter)}
-					  if(oEvt.getParameters().key=="TConf"){oDetailPage.setFooter(tconfFooter)}
+						if(selectedTab!=oEvt.getParameters().key){
+							selectedTab=oEvt.getParameters().key;
+							alert("TAB CHanged")
+						}
 					}
 				],
 				
@@ -1661,7 +1676,7 @@ tabitemsid=tabsid.split(":")
 
 
 	//Create Status Details
-
+sap.ui.getCore().getElementById('saveData').setVisible(true)
 
 
 var cnt=0;
@@ -1701,7 +1716,8 @@ var tabcontentQ;
 						
 						if(tasktext[0]=="PHOTO"){
 							phototab="Y"
-							tabcontentQ.addContent (new sap.m.Button( {
+							//alert("T"+tabid+":"+n)
+							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, {
 							    text: "Take Photo",
 							    icon:"sap-icon://add-photo",
 							    type: 	sap.m.ButtonType.Accept,
@@ -1709,29 +1725,27 @@ var tabcontentQ;
 							    	takePhoto()
 									  } ]
 							}));
+							tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
+							tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img id="imagePreview'+tabid+'">'}))
 						}else if(tasktext[0]=="YN"){
-							tabcontentQ.addContent (new sap.m.Switch({
+							tabcontentQ.addContent (new sap.m.Switch("T"+tabid+":"+n,{
 								state: false,
 								type: sap.m.SwitchType.AcceptReject
 							}));
 						}else if(tasktext[0]=="TXT"){
-							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Text}));
+							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Text}));
 						}else if(tasktext[0]=="NUM"){
-							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Number}));
-						}else if(tasktext[0]=="CHK"){
-							tabcontentQ.addContent (new sap.m.Input({type: sap.m.InputType.Text}));
+							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Number}));
+					 	}else if(tasktext[0]=="CHK"){
+							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Text}));
 						}else if(tasktext[0]=="LTXT"){
-							tabcontentQ.addContent (new sap.m.TextArea({rows: 5}));
+							tabcontentQ.addContent (new sap.m.TextArea("T"+tabid+":"+n,{rows: 5}));
 						}
 					}
 					n++;
 				 }
-				if(phototab=="Y"){
+
 				
-					tabcontentQ.addContent (new sap.m.Label({text:'Photo'}));
-					
-					tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img id="imgPreview'+tabid+'">'}))
-						}
 				
 
 			 },
@@ -1740,6 +1754,55 @@ var tabcontentQ;
 			 }        
 			);	
 }
+function saveTheData()
+{
+	x=selectedTab.split(":")
+	alert("SELECT * FROM mytasks where notifno = '"+currentNotifNo+"' and item_id = '"+x[1]+"';")
+	html5sql.process("SELECT * FROM mytasks where notifno = '"+currentNotifNo+"' and item_id = '"+x[1]+"';",
+			 function(transaction, results, rowsArray){
+			
+				n = 0;
+				while (n < rowsArray.length) {
+					
+					
+					tasktext=rowsArray[n].task_text.split(":")
+					
+					if(tasktext[0]=="HDR"){
+						alert("Saving->"+tasktext[1])
+						
+					}else{
+						
+						
+						
+						if(tasktext[0]=="PHOTO"){
+							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for photo"+$("#imagePreview"+x[1]).attr("src"))
+
+						}else if(tasktext[0]=="YN"){
+							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for YN"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
+						}else if(tasktext[0]=="TXT"){
+							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for TXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+						}else if(tasktext[0]=="NUM"){
+							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for NUM val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+					 	}else if(tasktext[0]=="CHK"){
+					 		alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK")
+						}else if(tasktext[0]=="LTXT"){
+							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for LTXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+						}
+					}
+					n++;
+				 }
+
+				
+				
+
+			 },
+			 function(error, statement){
+				alert(statement)
+			 }        
+			);	
+}
+	
+	
 function buildDetailsTabContent(orderNo,OpNo,Jtype,surveyID){
 
 
@@ -1807,7 +1870,7 @@ html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and op
 		 function(transaction, results, rowsArray){
 			var n = 0;
 			var opTable = sap.ui.getCore().getElementById('TConfsTable');
-			sap.ui.getCore().getElementById('TConfsTable').removeAllItems();
+			sap.ui.getCore().getElementById('TConfsTable').destroyItems();
 			while (n < rowsArray.length) {
 				
 		
@@ -1836,10 +1899,38 @@ html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and op
 
 }
 
-function deleteAbsence()
+function rebuildTimeConfs()
 {
 
-deleteDBAbsence(currentAbsence)
+	html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+CurrentOrderNo+"' and opno = '"+CurrentOpNo+"' ;",
+			 function(transaction, results, rowsArray){
+				var n = 0;
+				var opTable = sap.ui.getCore().getElementById('TConfsTable');
+				sap.ui.getCore().getElementById('TConfsTable').destroyItems();
+				while (n < rowsArray.length) {
+					
+			
+					opTable.addItem (new sap.m.ColumnListItem({
+						cells : 
+							[
+							new sap.m.Text({text: rowsArray[n].confno}),
+				            new sap.m.Text({text: rowsArray[n].type}),
+							new sap.m.Text({text: formatDateTime(rowsArray[n].date+rowsArray[n].time)}),
+				            new sap.m.Text({text: formatDateTime(rowsArray[n].enddate+rowsArray[n].endtime)}),
+							new sap.m.Text({text: rowsArray[n].duration}),
+				            new sap.m.Text({text: rowsArray[n].final}),
+				           
+							new sap.m.Text({text:  rowsArray[n].description})   
+					 		]
+						}));
+					n++;
+				 }
+
+			 },
+			 function(error, statement){
+				 //outputLogToDB(); 
+			 }        
+			);	
 
 }
 	var oDetailPage = new sap.m.Page(
@@ -1937,9 +2028,9 @@ function selectListDefault(){
 	  oSplitApp.to("detail");
 }
 function onCamSuccess(imageData) {
+x=selectedTab.split(":")
 
-
-	$("#imgPreview"+selectedTab).attr("src", imageData);
+	$("#imagePreview"+x[1]).attr("src", imageData);
 	}
 
 	function onCamFail(message) {
