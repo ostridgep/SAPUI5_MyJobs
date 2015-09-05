@@ -343,7 +343,9 @@ var formPhoto = new sap.m.Dialog("dlgPhoto",{
 					
 					],					
     content:[
-			new sap.m.Image("showPhoto")
+			new sap.m.Image("showPhoto",{
+				width:"25%"
+			})
             ],
             contentWidth:"95%",
             contentHeight: "85%",
@@ -354,8 +356,7 @@ var formPhoto = new sap.m.Dialog("dlgPhoto",{
       afterOpen:function(){  
     	  x=selectedTab.split(":")
 
-    	ap.ui.getCore().getElementById('showPhoto').setHeight(document.getElementById("dlgPhoto").offsetHeight-100)
-    	ap.ui.getCore().getElementById('showPhoto').setWidth(document.getElementById("dlgPhoto").offsetWidth-100)
+    
     	sap.ui.getCore().getElementById('showPhoto').setSrc(sap.ui.getCore().getElementById("imagePreview"+x[1]).getSrc())
 
 	  } ,
@@ -1762,7 +1763,8 @@ var tabcontentQ;
 							    text: "Take Photo",
 							    icon:"sap-icon://add-photo",
 							    type: 	sap.m.ButtonType.Accept,
-							    tap: [ function(oEvt) {		  
+							    tap: [ function(oEvt) {		
+							    	//formPhoto.open()
 							    	takePhoto()
 									  } ]
 							}));
@@ -2086,7 +2088,7 @@ sap.ui.getCore().getElementById("imagePreview"+x[1]).setSrc(imageData)
 	}
 	function takePhoto(){
 	
-		navigator.camera.getPicture(onCamSuccess, onCamFail, {quality:50, destinationType:Camera.DestinationType.FILE_URI});
+		navigator.camera.getPicture(onCamSuccess, onCamFail, {quality:100, destinationType:Camera.DestinationType.FILE_URI});
 
 	}
 
