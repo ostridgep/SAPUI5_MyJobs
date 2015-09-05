@@ -321,6 +321,46 @@ var formRoute = new sap.m.Dialog("dlgRoute",{
 
       }      
 	 })	
+var formPhoto = new sap.m.Dialog("dlgPhoto",{
+    title:"Image",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+
+
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formPhoto.close()} ]   
+					})
+					
+					],					
+    content:[
+			new sap.m.Image("showPhoto")
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+
+
+      },
+      afterOpen:function(){  
+    	  x=selectedTab.split(":")
+
+    	
+    	sap.ui.getCore().getElementById('showPhoto').setSrc(sap.ui.getCore().getElementById("imagePreview"+x[1]).getSrc())
+
+	  } ,
+
+	
+	 })
 var formQuestions = new sap.m.Dialog("dlgQuestions",{
     title:"",
    
@@ -1726,7 +1766,13 @@ var tabcontentQ;
 									  } ]
 							}));
 							tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
-							tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img id="imagePreview'+tabid+'">'}))
+							//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
+							tabcontentQ.addContent (new sap.m.Image('imagePreview'+tabid,{
+								width:"10%",
+								tap: [ function(oEvt) {		  
+									formPhoto.open()
+									  } ]
+							}));
 						}else if(tasktext[0]=="YN"){
 							tabcontentQ.addContent (new sap.m.Switch("T"+tabid+":"+n,{
 								state: false,
@@ -2030,7 +2076,8 @@ function selectListDefault(){
 function onCamSuccess(imageData) {
 x=selectedTab.split(":")
 
-	$("#imagePreview"+x[1]).attr("src", imageData);
+	//$("#imagePreview"+x[1]).attr("src", imageData);
+sap.ui.getCore().getElementById("imagePreview"+x[1]).setSrc(imageData)
 	}
 
 	function onCamFail(message) {
