@@ -561,14 +561,6 @@ var detailFooter = new sap.m.Bar({
 									 formRoute.open();
 
 										}]
-							 }),
-							 new sap.m.Button({
-								 text: "Signature",
-								 icon:"sap-icon://signature",
-								 press: [ function(){
-									 
-										formSignature.open()
-										}]
 							 })
 						],
 						contentMiddle : [
@@ -1767,7 +1759,7 @@ selectedTab="Task:"+tabitemsid[0]
 				select:[function(oEvt) {	
 						if(selectedTab!=oEvt.getParameters().key){
 							selectedTab=oEvt.getParameters().key;
-							alert("TAB CHanged")
+							//alert("TAB CHanged")
 						}
 					}
 				],
@@ -1852,27 +1844,47 @@ var tabcontentQ;
 						
 						tabcontentQ.addContent (new sap.m.Label({text:tasktext[1]}));
 						
-						if(tasktext[0]=="PHOTO"){
-							phototab="Y"
+						if(tasktext[0]=="SIG"){
+							
 							//alert("T"+tabid+":"+n)
 							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, {
-							    text: "Take Photo",
-							    icon:"sap-icon://add-photo",
+							    text: "Capture Signature",
+							    icon:"sap-icon://signature",
 							    type: 	sap.m.ButtonType.Accept,
 							    tap: [ function(oEvt) {		
-							    	//formPhoto.open()
-							    	takePhoto()
+							    	formSignature.open()
+							    	
 									  } ]
 							}));
-							tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
+							tabcontentQ.addContent (new sap.m.Label({text:"Signature Image"}));
 							//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
-							tabcontentQ.addContent (new sap.m.Image('imagePreview'+tabid,{
+							tabcontentQ.addContent (new sap.m.Image('sigPreview'+tabid,{
 								width:"10%",
 								tap: [ function(oEvt) {		  
-									formPhoto.open()
+									formSignature.open()
 									  } ]
 							}));
-						}else if(tasktext[0]=="YN"){
+						}else if(tasktext[0]=="PHOTO"){
+							phototab="Y"
+								//alert("T"+tabid+":"+n)
+								tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, {
+								    text: "Take Photo",
+								    icon:"sap-icon://add-photo",
+								    type: 	sap.m.ButtonType.Accept,
+								    tap: [ function(oEvt) {		
+								    	//formPhoto.open()
+								    	takePhoto()
+										  } ]
+								}));
+								tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
+								//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
+								tabcontentQ.addContent (new sap.m.Image('imagePreview'+tabid,{
+									width:"10%",
+									tap: [ function(oEvt) {		  
+										formPhoto.open()
+										  } ]
+								}));
+							}else if(tasktext[0]=="YN"){
 							tabcontentQ.addContent (new sap.m.Switch("T"+tabid+":"+n,{
 								state: false,
 								type: sap.m.SwitchType.AcceptReject
@@ -1882,7 +1894,7 @@ var tabcontentQ;
 						}else if(tasktext[0]=="NUM"){
 							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Number}));
 					 	}else if(tasktext[0]=="CHK"){
-							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Text}));
+							tabcontentQ.addContent (new sap.m.CheckBox("T"+tabid+":"+n,{selected:false, visible: true, enabled: true}));
 						}else if(tasktext[0]=="LTXT"){
 							tabcontentQ.addContent (new sap.m.TextArea("T"+tabid+":"+n,{rows: 5}));
 						}
@@ -1929,7 +1941,7 @@ function saveTheData()
 						}else if(tasktext[0]=="NUM"){
 							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for NUM val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 					 	}else if(tasktext[0]=="CHK"){
-					 		alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK")
+					 		alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
 						}else if(tasktext[0]=="LTXT"){
 							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for LTXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 						}
