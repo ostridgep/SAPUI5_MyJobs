@@ -18,11 +18,46 @@
 <script src="myresources/js/MyJobsUtils.js"></script>
 <script type="text/javascript" src="cordova.js"></script>
 <script type="text/javascript" src="barcodescanner.js"></script>
+<script src="myresources/js/jSignature.js"></script>
+
+<script src="myresources/js/plugins/jSignature.CompressorSVG.js"></script>
+<script src="myresources/js/plugins/jSignature.UndoButton.js"></script> 
+<script src="myresources/js/plugins/signhere/jSignature.SignHere.js"></script> 
+
 <style>
 .formHdr {
 				font-weight: bold;
 
-			}</style>
+			}
+	#signatureparent {
+		color:darkblue;
+		background-color:darkgrey;
+		/*max-width:600px;*/
+	
+		padding:20px;
+	}
+	
+	/*This is the div within which the signature canvas is fitted*/
+	#signature {
+		border: 2px dotted black;
+		background-color:lightgrey;
+	}
+
+	/* Drawing the 'gripper' for touch-enabled devices */ 
+	html.touch #content {
+		float:left;
+		width:92%;
+	}
+	html.touch #scrollgrabber {
+		float:right;
+		width:4%;
+		margin-right:2%;
+		background-image:url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAFCAAAAACh79lDAAAAAXNSR0IArs4c6QAAABJJREFUCB1jmMmQxjCT4T/DfwAPLgOXlrt3IwAAAABJRU5ErkJggg==)
+	}
+	html.borderradius #scrollgrabber {
+		border-radius: 1em;
+	}			
+			</style>
 
 <script type="text/javascript">
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
@@ -216,6 +251,59 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
 
             ]
 	 })
+var formSignature = new sap.m.Dialog("dlgSignature",{
+    title:"Signature",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+new sap.m.Button( {
+    text: "Save",
+    icon:"sap-icon://save",
+    type: sap.m.ButtonType.Accept,
+    tap: [ function(oEvt) {		  
+    	SaveSignature()
+    	} ]   
+}),
+
+					new sap.m.Button( {
+					    text: "Clear",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	ClearSignature()} ]   
+					}),
+					
+					],					
+    content:[
+
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+    	  formSignature.destroyContent()
+    	  formSignature.addContent(new 		sap.ui.core.HTML({
+			content: '<div id="signatureparent"><div id="signature"></div></div><div id="scrollgrabber"></div>'
+
+
+		}))
+
+      },
+      afterOpen:function(){  
+    	  if($('#signature').find('.jSignature').length == 0){
+              $("#signature").jSignature({'UndoButton':true,  'scaleX': .5,
+       'trim': true})
+           };
+	  } ,
+	  beforeClose:function(){
+		  
+	  }
+	
+	 })
 var formMap = new sap.m.Dialog("dlgMap",{
     title:"Location",
    
@@ -344,7 +432,7 @@ var formPhoto = new sap.m.Dialog("dlgPhoto",{
 					],					
     content:[
 			new sap.m.Image("showPhoto",{
-				width:"25%"
+				width:"80%"
 			})
             ],
             contentWidth:"95%",
@@ -472,6 +560,14 @@ var detailFooter = new sap.m.Bar({
 									 navigator.geolocation.getCurrentPosition(getDestinationDetails); 
 									 formRoute.open();
 
+										}]
+							 }),
+							 new sap.m.Button({
+								 text: "Signature",
+								 icon:"sap-icon://signature",
+								 press: [ function(){
+									 
+										formSignature.open()
 										}]
 							 })
 						],
@@ -1771,7 +1867,7 @@ var tabcontentQ;
 							tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
 							//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
 							tabcontentQ.addContent (new sap.m.Image('imagePreview'+tabid,{
-								width:"50%",
+								width:"10%",
 								tap: [ function(oEvt) {		  
 									formPhoto.open()
 									  } ]
@@ -2413,7 +2509,16 @@ var profile=x[2];
 
     })
     };
+    function ClearSignature(){
+		$("#signature").jSignature('reset')
+}
+function SaveSignature(){
+		data = $("#signature").jSignature('getData', 'svg')
+formSignature.close()
 
+		//UpdateSignatureSurveyHDR(escape(data[1]))
+		
+}
 </script>
 </body>
 </html>
