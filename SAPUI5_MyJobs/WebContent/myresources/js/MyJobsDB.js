@@ -30,10 +30,15 @@ function requestSAPData(page,params){
 
 	opMessage(SAPServerPrefix+page+params);
 	var myurl=SAPServerPrefix+page+params;
-
-  $.getJSON(myurl);
+	console.log(myurl)
+  $.getJSON(myurl)
+  
   
 }
+
+
+	 
+
 function sendSAPData(page){
 	opMessage(page);
 
@@ -1028,7 +1033,43 @@ function updateOperationStatus(orderno, opno, code, status)
 //  Create Routines
 //
 //*************************************************************************************************************************
+function saveTheAnswer(order,opno,user,dt,item,task,value)
+{
+	html5sql.process("select * from JobAnswers were orderno = '"+order+
+			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+			function(transaction, results, rowsArray){
+				if(resultsArray.length>0){
+					html5sql.process("UPDATE JobAnswers SET updateddate = '"+dt+"' and value = '" +value+"'"+
+							" were orderno = '"+order+
+								"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+							 function(){
+								 
+							 },
+							 function(error, statement){
+								opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
+							 }        
+							);
+				}else{
+					html5sql.process("INSERT INTO  JobAnswers (orderno , opno, user, updateddate, item , task , value ) VALUES ("+
+							 "'"+order+"','"+opno+"','"+user+"','"+dt+"','"+item+"','"+task+"','"+value+"');",
+					 function(){
+						
+					 },
+					 function(error, statement){
+						 //alert("Error: " + error.message + " when JobAnswers Inserting " + statement);
+						opMessage("Error: " + error.message + " when JobAnswers Inserting " + statement);
+					 }        
+					);
+				}
+			 },
+			 function(error, statement){
+				opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
+			 }        
+			);
+	
 
+
+}
 function createTConf(order,opno,empid,type,startdate,enddate,duration,finalconf,comments)
 {
 
@@ -1161,7 +1202,7 @@ function createTables(type) {
 
 	//opMessage("Creating The Tables");	
         
-		sqlstatement='CREATE TABLE IF NOT EXISTS MyOrders     			( orderno TEXT, shorttext TEXT, longtext TEXT, startdate TEXT, enddate TEXT, contact TEXT,   telno TEXT,    type TEXT, priority TEXT, address TEXT, workaddress TEXT, house TEXT, houseno TEXT, street TEXT, district TEXT, city TEXT, postcode TEXT,gis TEXT, property TEXT, funcloc TEXT, equipment TEXT, propertygis TEXT, funclocgis TEXT, equipmentgis TEXT, notifno TEXT);'+
+		sqlstatement='CREATE TABLE IF NOT EXISTS MyOrders     			( orderno TEXT, changedby TEXT, changeddatetime TEXT, shorttext TEXT, longtext TEXT, startdate TEXT, enddate TEXT, contact TEXT,   telno TEXT,    type TEXT, priority TEXT, address TEXT, workaddress TEXT, house TEXT, houseno TEXT, street TEXT, district TEXT, city TEXT, postcode TEXT,gis TEXT, property TEXT, funcloc TEXT, equipment TEXT, propertygis TEXT, funclocgis TEXT, equipmentgis TEXT, notifno TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyOperations 			( orderno TEXT, opno TEXT,      type TEXT,     priority TEXT,  shorttext TEXT, startdate TEXT, enddate TEXT, duration TEXT, status TEXT, assignedto TEXT, apptstart TEXT, apptend TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyOperationsSplit 		( orderno TEXT, opno TEXT,      assignedto TEXT,  duration TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyPartners   			( orderno TEXT, notifno TEXT, id TEXT,        type TEXT,     name TEXT,      address TEXT,   postcode TEXT, telno TEXT);'+
@@ -1169,7 +1210,7 @@ function createTables(type) {
 					 'CREATE TABLE IF NOT EXISTS MyMaterials     		( orderno TEXT, id TEXT, material TEXT, qty TEXT, description TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyUserStatus     		( id integer primary key autoincrement, type TEXT, orderno TEXT, opno TEXT, inact TEXT, status TEXT, statuscode TEXT, statusdesc TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyOperationInfo     	( id integer primary key autoincrement, orderno TEXT, opno TEXT, type TEXT, value1 TEXT, value2 TEXT);'+
-					 'CREATE TABLE IF NOT EXISTS MyNotifications     	( id integer primary key autoincrement, notifno TEXT, shorttext TEXT, longtext TEXT, cattype TEXT,  pgroup TEXT, pcode TEXT, grouptext TEXT, codetext TEXT, startdate TEXT, starttime TEXT, type TEXT, priority TEXT, funcloc TEXT,   equipment TEXT, orderno TEXT, reportedon TEXT,   reportedby TEXT, plant TEXT, funclocgis TEXT,   equipmentgis TEXT);'+
+					 'CREATE TABLE IF NOT EXISTS MyNotifications     	( id integer primary key autoincrement, notifno TEXT, changedby TEXT, changeddatetime TEXT, shorttext TEXT, longtext TEXT, cattype TEXT,  pgroup TEXT, pcode TEXT, grouptext TEXT, codetext TEXT, startdate TEXT, starttime TEXT, type TEXT, priority TEXT, funcloc TEXT,   equipment TEXT, orderno TEXT, reportedon TEXT,   reportedby TEXT, plant TEXT, funclocgis TEXT,   equipmentgis TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyItems     			( id integer primary key autoincrement, notifno TEXT, item_id TEXT, descript TEXT, d_cat_typ TEXT, d_codegrp TEXT, d_code TEXT, dl_cat_typ TEXT, dl_codegrp TEXT, dl_code TEXT, long_text TEXT, stxt_grpcd TEXT ,txt_probcd TEXT  ,txt_grpcd TEXT , txt_objptcd TEXT, status TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyCauses      			( id integer primary key autoincrement, notifno TEXT, item_id TEXT, cause_id TEXT, cause_text TEXT, cause_cat_typ TEXT, cause_codegrp TEXT, cause_code TEXT, long_text TEXT, txt_causegrp TEXT, txt_causecd TEXT, status TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS MyActivities     		( id integer primary key autoincrement, notifno TEXT, task_id TEXT, item_id TEXT,  act_id TEXT, act_text TEXT, act_cat_typ TEXT, act_codegrp TEXT, act_code TEXT,  start_date TEXT, start_time TEXT ,end_date TEXT  ,end_time TEXT , long_text TEXT, txt_actgrp TEXT, txt_actcd TEXT, status TEXT);'+
@@ -1597,9 +1638,13 @@ function requestDEMOData(page){
   });
 }
 function orderCB(MyOrders){
-	
+var sqlDelete="";
+var sqlstatement="";
+var sqlstatements=[];
+var ordernos=[];
+var changeddatetime=[];
 		opMessage("Doing Orders");
-		//alert("total orders "+MyOrders.order.length)
+		
 		
 		if(MyOrders.order.length>0){
 			if(syncTransactionalDetsUpdated){
@@ -1608,7 +1653,7 @@ function orderCB(MyOrders){
 				localStorage.setItem('LastSyncTransactionalDetails',localStorage.getItem('LastSyncTransactionalDetails')+'Orders:'+String(MyOrders.order.length));
 			}
 			opMessage("Deleting Existing Orders");
-			sqlstatement = 	'DELETE FROM MyOrders;'+
+			sqlDelete = 	'DELETE FROM MyOrders;'+
 							'DELETE FROM MyOperations;'+
 							'DELETE FROM MyOperationsSplit;'+
 							'DELETE FROM MyPartners;'+
@@ -1620,22 +1665,24 @@ function orderCB(MyOrders){
 							'DELETE FROM MyOperationInfo;'+
 							'DELETE FROM MyStatus where state="SERVER";';
 			
-			html5sql.process(sqlstatement,
+/*			html5sql.process(sqlDelete,
 						 function(){
 							 //alert("Success del Tables");
 						 },
 						 function(error, statement){
 							 opMessage("Error: " + error.message + " when processing " + statement);
 						 }        
-				);
+				);*/
 			opMessage("Loading "+MyOrders.order.length+" Orders");
 		
 	
 			for(var cntx=0; cntx < MyOrders.order.length ; cntx++)
 				{
-
-				sqlstatement+='INSERT INTO MyOrders (orderno , shorttext , longtext , startdate ,  enddate ,contact , telno , type , priority , address ,workaddress, house, houseno, street, district, city, postcode, gis,  property, funcloc, equipment, propertygis, funclocgis, equipmentgis, notifno) VALUES ('+
-					 '"'+MyOrders.order[cntx].orderno+ '","'+ MyOrders.order[cntx].shorttext + '","'+ MyOrders.order[cntx].longtext + '","'+ MyOrders.order[cntx].startdate + '","'+ MyOrders.order[cntx].enddate + '","'+MyOrders.order[cntx].contact+'",'+ 
+				ordernos.push(MyOrders.order[cntx].orderno)
+				changeddatetime.push(MyOrders.order[cntx].changed_date+MyOrders.order[cntx].changed_time)
+				
+				sqlstatement='INSERT INTO MyOrders (orderno , changedby, changeddatetime, shorttext , longtext , startdate ,  enddate ,contact , telno , type , priority , address ,workaddress, house, houseno, street, district, city, postcode, gis,  property, funcloc, equipment, propertygis, funclocgis, equipmentgis, notifno) VALUES ('+
+					 '"'+MyOrders.order[cntx].orderno+ '","'+ MyOrders.order[cntx].changed_by+ '","'+ MyOrders.order[cntx].changed_date+MyOrders.order[cntx].changed_time+ '","'+ MyOrders.order[cntx].shorttext + '","'+ MyOrders.order[cntx].longtext + '","'+ MyOrders.order[cntx].startdate + '","'+ MyOrders.order[cntx].enddate + '","'+MyOrders.order[cntx].contact+'",'+ 
 					 '"'+MyOrders.order[cntx].telno + '","'+MyOrders.order[cntx].type + '","'+MyOrders.order[cntx].priority + '","'+MyOrders.order[cntx].address + '","'+MyOrders.order[cntx].workaddress+ '","'+MyOrders.order[cntx].house+'",'+ 
 					 '"'+MyOrders.order[cntx].houseno+ '","'+MyOrders.order[cntx].street+ '","'+MyOrders.order[cntx].district+ '","'+MyOrders.order[cntx].city+ '","'+MyOrders.order[cntx].postcode+ '","'+MyOrders.order[cntx].gis+'",'+ 
 					 '"'+MyOrders.order[cntx].property+  '","'+MyOrders.order[cntx].funcloc+  '","'+MyOrders.order[cntx].equipment+'",'+ 
@@ -1746,27 +1793,78 @@ function orderCB(MyOrders){
 	
 
 					}
+				sqlstatements.push(sqlstatement);
+				sqlstatement=""
 
+				
+				
+				
 
 			
 			}
+			for(var cntx=0; cntx < ordernos.length ; cntx++)
+			{
+				InsertOrder(sqlstatements[cntx],ordernos[cntx],changeddatetime[cntx])
+			}
 
-html5sql.process(sqlstatement,
-						 function(){
-							var x = window.location.href.split("/")
-							if(x[x.length-1]=="Home.html"){
-								setCounts()
-							}
-						 },
-						 function(error, statement){
-							 opMessage("Error: " + error.message + " when processing " + statement);
-						 }        
-				);			
-			
-		}
+
+		var x = window.location.href.split("/")
+		if(x[x.length-1]=="Home.html"){
+			setCounts()
+
+			}
 	
+		}
 
+}
+function InsertOrder(sqlstatement,orderno,changeddatetime){
+	var sqlstatement1=""
 
+	html5sql.process("select * from MyOrders where orderno = '"+orderno+"'",
+			 function(transaction, results, rowsArray){
+
+					if ((rowsArray.length<1)||(rowsArray[0].changeddatetime<changeddatetime)){
+						if(rowsArray.length<1){
+							opMessage("Inserting New Order details "+orderno);
+							sqlstatement1 = '';
+						}else{
+							//alert("DB="+rowsArray[0].changeddatetime+"SAP="+changeddatetime)
+							opMessage("Deleting Existing Order details "+orderno);
+							sqlstatement1 = 	'DELETE FROM MyOrders where orderno = "'+orderno+'";'+
+											'DELETE FROM MyOperations where orderno = "'+orderno+'";'+
+											'DELETE FROM MyOperationsSplit where orderno = "'+orderno+'";'+
+											'DELETE FROM MyPartners where orderno = "'+orderno+'";'+
+											'DELETE FROM MyMaterials where orderno = "'+orderno+'";'+
+											'DELETE FROM MyAssets where orderno = "'+orderno+'";'+
+						
+											'DELETE FROM MyTimeConfs where orderno = "'+orderno+'";'+
+											'DELETE FROM MyUserStatus where orderno = "'+orderno+'";'+
+											'DELETE FROM MyOperationInfo where orderno = "'+orderno+'";'+
+											'DELETE FROM MyStatus where state="SERVER" and orderno = "'+orderno+'";'
+						}
+						
+						html5sql.process(sqlstatement1+sqlstatement,
+								 function(transaction, results, rowsArray){
+
+										
+									
+			
+										
+								 },
+								 function(error, statement){
+									
+								 }        
+								);
+
+					}else{
+						//alert("Order Exists "+rowsArray[0].changeddatetime+"SAP="+changeddatetime)
+					}
+
+			 },
+			 function(error, statement){
+				
+			 }        
+			);
 }
 function objectsCB(Objects){
 opMessage("Callback objects triggured");
@@ -1852,8 +1950,10 @@ opMessage("Callback Notifications triggured");
 					notiftype=MyNotifications.notification[cntx].sortfield;
 				}
 				
-				sqlstatement+='INSERT INTO MyNotifications (notifno , shorttext , longtext , startdate , priority , type, funcloc, equipment, orderno, reportedon , reportedby , plant, funclocgis, equipmentgis, cattype, pgroup, pcode, grouptext, codetext) VALUES ( '+ 
+				sqlstatement+='INSERT INTO MyNotifications (notifno , changedby, changeddatetime, shorttext , longtext , startdate , priority , type, funcloc, equipment, orderno, reportedon , reportedby , plant, funclocgis, equipmentgis, cattype, pgroup, pcode, grouptext, codetext) VALUES ( '+ 
 					'"'+MyNotifications.notification[cntx].notifno +'",'+
+					'"'+MyNotifications.notification[cntx].changed_by+'",'+ 
+					'"'+MyNotifications.notification[cntx].changed_date +MyNotifications.notification[cntx].changed_time +'",'+ 
 					'"'+MyNotifications.notification[cntx].shorttext+'",'+ 
 					'"'+MyNotifications.notification[cntx].longtext +'",'+ 
 					'"'+MyNotifications.notification[cntx].startdate+'",'+ 

@@ -969,7 +969,7 @@ var jobType;
 			
 		SQLStatement+="left join myorders on myoperations.orderno = myorders.orderno "
 			SQLStatement+="left join mynotifications on myorders.notifno = mynotifications.notifno "
-			SQLStatement+=" where myoperationssplit.assignedto = '"+EmployeeID+"'"
+			SQLStatement+=" where myoperationssplit.assignedto = '"+EmployeeID+"' order by  MyOperations.orderno,  MyOperations.opno"
 html5sql.process(SQLStatement,
 		 function(transaction, results, rowsArray){
 
@@ -1858,8 +1858,8 @@ var tabcontentQ;
 							}));
 							tabcontentQ.addContent (new sap.m.Label({text:"Signature Image"}));
 							//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
-							tabcontentQ.addContent (new sap.m.Image('sigPreview'+tabid,{
-								width:"10%",
+							tabcontentQ.addContent (new sap.m.Image('signaturePreview'+tabid,{
+								width:"20%",
 								tap: [ function(oEvt) {		  
 									formSignature.open()
 									  } ]
@@ -1914,7 +1914,7 @@ var tabcontentQ;
 function saveTheData()
 {
 	x=selectedTab.split(":")
-	alert("SELECT * FROM mytasks where notifno = '"+currentNotifNo+"' and item_id = '"+x[1]+"';")
+	//alert("SELECT * FROM mytasks where notifno = '"+currentNotifNo+"' and item_id = '"+x[1]+"';")
 	html5sql.process("SELECT * FROM mytasks where notifno = '"+currentNotifNo+"' and item_id = '"+x[1]+"';",
 			 function(transaction, results, rowsArray){
 			
@@ -1925,25 +1925,41 @@ function saveTheData()
 					tasktext=rowsArray[n].task_text.split(":")
 					
 					if(tasktext[0]=="HDR"){
-						alert("Saving->"+tasktext[1])
+						//alert("Saving->"+tasktext[1])
 						
 					}else{
 						
 						
 						
 						if(tasktext[0]=="PHOTO"){
-							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for photo"+$("#imagePreview"+x[1]).attr("src"))
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,$("#imagePreview"+x[1]).attr("src"))
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for photo"+$("#imagePreview"+x[1]).attr("src"))
 
 						}else if(tasktext[0]=="YN"){
-							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for YN"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for YN"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
 						}else if(tasktext[0]=="TXT"){
-							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for TXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for TXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 						}else if(tasktext[0]=="NUM"){
-							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for NUM val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for NUM val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 					 	}else if(tasktext[0]=="CHK"){
-					 		alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
+					 		saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
+					 		//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
 						}else if(tasktext[0]=="LTXT"){
-							alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for LTXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for LTXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+						}else if(tasktext[0]=="SIG"){
+							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
+									getDate()+getTime(),x[1],n,$("#signaturePreview"+x[1]).attr("src"))
+							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for sig"+$("#imagePreview"+x[1]).attr("src"))
 						}
 					}
 					n++;
@@ -2525,7 +2541,12 @@ var profile=x[2];
 		$("#signature").jSignature('reset')
 }
 function SaveSignature(){
-		data = $("#signature").jSignature('getData', 'svg')
+	var	data = $("#signature").jSignature('getData', 'svgbase64')
+		
+		x=selectedTab.split(":")
+
+	//$("#imagePreview"+x[1]).attr("src", imageData);
+sap.ui.getCore().getElementById("signaturePreview"+x[1]).setSrc( "data:" + data[0] + "," + data[1] )
 formSignature.close()
 
 		//UpdateSignatureSurveyHDR(escape(data[1]))

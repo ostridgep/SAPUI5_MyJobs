@@ -269,19 +269,19 @@ var formLastSync = new sap.m.Dialog("dlgLastSync",{
 function forceTheSync()
 {
 
-if(sap.ui.getCore().getElementById('synchroniseReference').setSelected()){
+if(sap.ui.getCore().getElementById('synchroniseReference').getSelected()){
 
 	SetConfigParam('LASTSYNC_REFERENCE', "20120101010101");
 	syncReference()
 	
 
 };
-if(sap.ui.getCore().getElementById('synchroniseTransactional').setSelected()){
+if(sap.ui.getCore().getElementById('synchroniseTransactional').getSelected()){
 	SetConfigParam('LASTSYNC_TRANSACTIONAL', "20120101010101");
 	syncTransactional()
 
 	};
-	if(sap.ui.getCore().getElementById('synchroniseUpload').setSelected()){
+	if(sap.ui.getCore().getElementById('synchroniseUpload').getSelected()){
 	SetConfigParam('LASTSYNC_UPLOAD', "20120101010101");
 	syncUpload()
 	};
