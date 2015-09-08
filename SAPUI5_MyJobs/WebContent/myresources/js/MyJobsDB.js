@@ -1035,12 +1035,12 @@ function updateOperationStatus(orderno, opno, code, status)
 //*************************************************************************************************************************
 function saveTheAnswer(order,opno,user,dt,item,task,value)
 {
-	html5sql.process("select * from JobAnswers were orderno = '"+order+
+	html5sql.process("select * from JobAnswers where orderno = '"+order+
 			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
 			function(transaction, results, rowsArray){
-				if(resultsArray.length>0){
+				if(rowsArray.length>0){
 					html5sql.process("UPDATE JobAnswers SET updateddate = '"+dt+"' and value = '" +value+"'"+
-							" were orderno = '"+order+
+							" where orderno = '"+order+
 								"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
 							 function(){
 								 

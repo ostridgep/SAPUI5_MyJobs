@@ -1847,7 +1847,7 @@ var tabcontentQ;
 						if(tasktext[0]=="SIG"){
 							
 							//alert("T"+tabid+":"+n)
-							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, {
+							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, tabid, {
 							    text: "Capture Signature",
 							    icon:"sap-icon://signature",
 							    type: 	sap.m.ButtonType.Accept,
@@ -1856,6 +1856,7 @@ var tabcontentQ;
 							    	
 									  } ]
 							}));
+							
 							tabcontentQ.addContent (new sap.m.Label({text:"Signature Image"}));
 							//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
 							tabcontentQ.addContent (new sap.m.Image('signaturePreview'+tabid,{
@@ -1876,6 +1877,7 @@ var tabcontentQ;
 								    	takePhoto()
 										  } ]
 								}));
+							
 								tabcontentQ.addContent (new sap.m.Label({text:"Image"}));
 								//tabcontentQ.addContent (new sap.ui.core.HTML({content: '<img width= "10%" id="imagePreview'+tabid+'">'}))
 								tabcontentQ.addContent (new sap.m.Image('imagePreview'+tabid,{
@@ -1889,8 +1891,10 @@ var tabcontentQ;
 								state: false,
 								type: sap.m.SwitchType.AcceptReject
 							}));
+							
 						}else if(tasktext[0]=="TXT"){
 							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Text}));
+							
 						}else if(tasktext[0]=="NUM"){
 							tabcontentQ.addContent (new sap.m.Input("T"+tabid+":"+n,{type: sap.m.InputType.Number}));
 					 	}else if(tasktext[0]=="CHK"){
@@ -1898,6 +1902,7 @@ var tabcontentQ;
 						}else if(tasktext[0]=="LTXT"){
 							tabcontentQ.addContent (new sap.m.TextArea("T"+tabid+":"+n,{rows: 5}));
 						}
+					setP100FieldVal(tasktext[0],"T"+tabid+":"+n,localStorage.getItem('MobileUser'),CurrentOrderNo,CurrentOpNo,tabid,n)	
 					}
 					n++;
 				 }
@@ -1974,7 +1979,37 @@ function saveTheData()
 			 }        
 			);	
 }
+function setP100FieldVal(type,fldid,user,order,opno,item,task)	{
 	
+	html5sql.process("select * from JobAnswers where orderno = '"+order+
+			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+				function(transaction, results, rowsArray){
+						if(fldid=="PHOTO"){
+							//$("#imagePreview"+x[1]).attr("src",rowsArray[0].value)
+						
+				
+						}else if(fldid=="YN"){
+							sap.ui.getCore().getElementById(fldid).setState(rowsArray[0].value)
+							
+						}else if(fldid=="TXT"){
+							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
+							
+						}else if(fldid=="NUM"){
+							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
+					 	}else if(fldid=="CHK"){
+					 		sap.ui.getCore().getElementById(fldid).setSelected()
+						}else if(fldid=="LTXT"){
+							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
+						}else if(fldid=="SIG"){
+							//$("#signaturePreview"+x[1]).attr("src"))
+							
+						}
+			 },
+			 function(error, statement){
+				opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
+			 }        
+			);
+}	
 	
 function buildDetailsTabContent(orderNo,OpNo,Jtype,surveyID){
 
