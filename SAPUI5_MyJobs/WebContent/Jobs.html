@@ -1812,6 +1812,7 @@ sap.ui.getCore().getElementById('saveData').setVisible(true)
 var cnt=0;
 	while(tabitemsid[cnt]!="END"){
 		P100TabCont(notifno,tabitemsid[cnt])
+		P100TabContData(notifno,tabitemsid[cnt])
 	
 	cnt=cnt+1;
 	} 
@@ -1979,18 +1980,49 @@ function saveTheData()
 			 }        
 			);	
 }
+function P100TabContData(notifno,tabid){
+	//alert("Loading The Data for "+notifno+"--->"+tabid)
+	var tasktext;	
+	var phototab;
+	var n = 0;
+	var tabcontent;
+	var tabcontentQ;
+		html5sql.process("SELECT * FROM mytasks where notifno = '"+notifno+"' and item_id = '"+tabid+"';",
+				 function(transaction, results, rowsArray){
+
+					n = 0;
+					while (n < rowsArray.length) {						
+						tasktext=rowsArray[n].task_text.split(":")					
+						setP100FieldVal(tasktext[0],"T"+tabid+":"+n,localStorage.getItem('MobileUser'),CurrentOrderNo,CurrentOpNo,tabid,n)	
+			
+						n++;
+					 }
+
+					
+					
+
+				 },
+				 function(error, statement){
+					alert(statement)
+				 }        
+				);	
+	}
 function setP100FieldVal(type,fldid,user,order,opno,item,task)	{
-	
+	//alert(type+"-"+fldid+"-"+user+"-"+order+"-"+opno+"-"+item+"-"+task)
 	html5sql.process("select * from JobAnswers where orderno = '"+order+
 			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
 				function(transaction, results, rowsArray){
+				//alert(rowsArray.length)
 						if(fldid=="PHOTO"){
 							//$("#imagePreview"+x[1]).attr("src",rowsArray[0].value)
 						
 				
 						}else if(fldid=="YN"){
-							sap.ui.getCore().getElementById(fldid).setState(rowsArray[0].value)
-							
+							if (rowsArray[0].value){
+							sap.ui.getCore().getElementById(fldid).setState(true)
+							}else{
+							sap.ui.getCore().getElementById(fldid).setState(false)
+							}
 						}else if(fldid=="TXT"){
 							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
 							
@@ -2006,6 +2038,7 @@ function setP100FieldVal(type,fldid,user,order,opno,item,task)	{
 						}
 			 },
 			 function(error, statement){
+				 alert("Error: " + error.message + " when updateOrderLatLong processing " + statement);
 				opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
 			 }        
 			);
