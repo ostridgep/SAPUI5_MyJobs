@@ -1033,8 +1033,9 @@ function updateOperationStatus(orderno, opno, code, status)
 //  Create Routines
 //
 //*************************************************************************************************************************
-function saveTheAnswer(order,opno,user,dt,item,task,value)
+function saveTheAnswer1(order,opno,user,dt,item,task,value)
 {
+	alert(value)
 	html5sql.process("select * from JobAnswers where orderno = '"+order+
 			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
 			function(transaction, results, rowsArray){
@@ -1052,6 +1053,53 @@ function saveTheAnswer(order,opno,user,dt,item,task,value)
 				}else{
 					html5sql.process("INSERT INTO  JobAnswers (orderno , opno, user, updateddate, item , task , value ) VALUES ("+
 							 "'"+order+"','"+opno+"','"+user+"','"+dt+"','"+item+"','"+task+"','"+value+"');",
+					 function(){
+						
+					 },
+					 function(error, statement){
+						 //alert("Error: " + error.message + " when JobAnswers Inserting " + statement);
+						opMessage("Error: " + error.message + " when JobAnswers Inserting " + statement);
+					 }        
+					);
+				}
+			 },
+			 function(error, statement){
+				opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
+			 }        
+			);
+	
+
+
+}
+function saveTheAnswer(order,opno,user,dt,item,task,value,type)
+{
+	var xval;
+	if(type=="PHOTO"){
+		xval=escape(sap.ui.getCore().getElementById(value).getSrc())
+	}else if(type=="SIG"){
+		
+		xval=escape(sap.ui.getCore().getElementById(value).getSrc())
+	}else{
+		xval=value
+	}
+	
+	html5sql.process("select * from JobAnswers where orderno = '"+order+
+			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+			function(transaction, results, rowsArray){
+				if(rowsArray.length>0){
+					html5sql.process("UPDATE JobAnswers SET updateddate = '"+dt+"' , value = '" +xval+"'"+
+							" where orderno = '"+order+
+								"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+							 function(){
+								 
+							 },
+							 function(error, statement){
+								opMessage("Error: " + error.message + " when updateOrderLatLong processing " + statement);
+							 }        
+							);
+				}else{
+					html5sql.process("INSERT INTO  JobAnswers (orderno , opno, user, updateddate, item , task , value ) VALUES ("+
+							 "'"+order+"','"+opno+"','"+user+"','"+dt+"','"+item+"','"+task+"','"+xval+"');",
 					 function(){
 						
 					 },

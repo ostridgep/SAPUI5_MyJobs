@@ -602,7 +602,10 @@ var page  = new sap.m.Page('homePage',{
 	footer:new sap.m.Bar (
 			{
 				id : 'master-footer',
+				contentLeft : [
 
+
+						],
 				contentRight : [
 
 				       		new sap.m.Button("Settings", {
@@ -621,9 +624,7 @@ var page  = new sap.m.Page('homePage',{
       					loadLastSyncValues();
       					 sap.ui.getCore().byId("dlgLastSync").open(); ;
       						}]
-      			 })],
-			contentLeft : [
-					]
+      			 })]
 			}),
     content: [tileContainer,new sap.m.Label({text:"xxxxx"})],enableScrolling:false,showNavButton: "{device>/isPhone}" });
 
@@ -674,6 +675,7 @@ $(function() {
 	
 	startBGSync()
 	showSystemMessage()
+	
 })
 </Script>
 </body>

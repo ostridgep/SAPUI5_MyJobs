@@ -82,6 +82,8 @@ var CurrentOrderNo="";
 var CurrentOpNo="";
 var currentNotifNo="";
 var currentOrderListItem="";
+var tabContents=[]
+var tabFieldCnt=0
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
@@ -1242,6 +1244,15 @@ html5sql.process(SQLStatement,
 				 			oDetailPage.addContent(buildDetailsP100Tabs(tabsdesc,tabsid))
 			 				
 			 				buildDetailsP100TabContent(orderno,opno,currentNotifNo,tabsid)
+			 				cnt=0;
+			 				while(cnt < rowsArray.length){
+			 					P100TabContData(currentNotifNo,rowsArray[cnt].item_id)
+				 			
+				 				cnt++;
+				 			}
+			 					
+			 					sap.ui.getCore().getElementById('tabBar').setVisible(true)
+							
 			 	},
 				 function(error, statement){
 					 //outputLogToDB(); 
@@ -1755,11 +1766,12 @@ selectedTab="Task:"+tabitemsid[0]
 	var tabBar  = new sap.m.IconTabBar('tabBar',
 			{
 				expanded:'{device>/isNoPhone}',
-
+				visible: false,
 				select:[function(oEvt) {	
 						if(selectedTab!=oEvt.getParameters().key){
 							selectedTab=oEvt.getParameters().key;
-							//alert("TAB CHanged")
+							//x=selectedTab.split(":")
+							//P100TabContData(currentNotifNo,x[1])
 						}
 					}
 				],
@@ -1812,7 +1824,7 @@ sap.ui.getCore().getElementById('saveData').setVisible(true)
 var cnt=0;
 	while(tabitemsid[cnt]!="END"){
 		P100TabCont(notifno,tabitemsid[cnt])
-		P100TabContData(notifno,tabitemsid[cnt])
+		
 	
 	cnt=cnt+1;
 	} 
@@ -1848,7 +1860,7 @@ var tabcontentQ;
 						if(tasktext[0]=="SIG"){
 							
 							//alert("T"+tabid+":"+n)
-							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, tabid, {
+							tabcontentQ.addContent (new sap.m.Button("T"+tabid+":"+n, {
 							    text: "Capture Signature",
 							    icon:"sap-icon://signature",
 							    type: 	sap.m.ButtonType.Accept,
@@ -1903,7 +1915,7 @@ var tabcontentQ;
 						}else if(tasktext[0]=="LTXT"){
 							tabcontentQ.addContent (new sap.m.TextArea("T"+tabid+":"+n,{rows: 5}));
 						}
-					setP100FieldVal(tasktext[0],"T"+tabid+":"+n,localStorage.getItem('MobileUser'),CurrentOrderNo,CurrentOpNo,tabid,n)	
+					//setP100FieldVal(tasktext[0],"T"+tabid+":"+n,localStorage.getItem('MobileUser'),CurrentOrderNo,CurrentOpNo,tabid,n)	
 					}
 					n++;
 				 }
@@ -1939,33 +1951,33 @@ function saveTheData()
 						
 						if(tasktext[0]=="PHOTO"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,$("#imagePreview"+x[1]).attr("src"))
+									getDate()+getTime(),x[1],n,"imagePreview"+x[1],"PHOTO")
 							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for photo"+$("#imagePreview"+x[1]).attr("src"))
 
 						}else if(tasktext[0]=="YN"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState(),"NORMAL")
 							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for YN"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getState())
 						}else if(tasktext[0]=="TXT"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue(),"NORMAL")
 							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for TXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 						}else if(tasktext[0]=="NUM"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue(),"NORMAL")
 							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for NUM val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 					 	}else if(tasktext[0]=="CHK"){
 					 		saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected(),"NORMAL")
 					 		//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for CHK"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getSelected())
 						}else if(tasktext[0]=="LTXT"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
+									getDate()+getTime(),x[1],n,sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue(),"NORMAL")
 							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for LTXT val"+sap.ui.getCore().getElementById('T'+x[1]+":"+n).getValue())
 						}else if(tasktext[0]=="SIG"){
 							saveTheAnswer(CurrentOrderNo,CurrentOpNo,localStorage.getItem('MobileUser'),
-									getDate()+getTime(),x[1],n,$("#signaturePreview"+x[1]).attr("src"))
-							//alert("Saving Field->"+tasktext[1]+"Check "+"T"+x[1]+":"+n+" for sig"+$("#imagePreview"+x[1]).attr("src"))
+									getDate()+getTime(),x[1],n,"signaturePreview"+x[1],"SIG")
+							
 						}
 					}
 					n++;
@@ -1980,18 +1992,22 @@ function saveTheData()
 			 }        
 			);	
 }
+
 function P100TabContData(notifno,tabid){
-	//alert("Loading The Data for "+notifno+"--->"+tabid)
+
 	var tasktext;	
 	var phototab;
 	var n = 0;
 	var tabcontent;
 	var tabcontentQ;
+	tabFieldCnt=0;
+	tabContents=[];
 		html5sql.process("SELECT * FROM mytasks where notifno = '"+notifno+"' and item_id = '"+tabid+"';",
 				 function(transaction, results, rowsArray){
-
+					tabFieldCnt=rowsArray.length
 					n = 0;
-					while (n < rowsArray.length) {						
+					while (n < rowsArray.length) {	
+
 						tasktext=rowsArray[n].task_text.split(":")					
 						setP100FieldVal(tasktext[0],"T"+tabid+":"+n,localStorage.getItem('MobileUser'),CurrentOrderNo,CurrentOpNo,tabid,n)	
 			
@@ -2008,34 +2024,41 @@ function P100TabContData(notifno,tabid){
 				);	
 	}
 function setP100FieldVal(type,fldid,user,order,opno,item,task)	{
+
 	//alert(type+"-"+fldid+"-"+user+"-"+order+"-"+opno+"-"+item+"-"+task)
 	html5sql.process("select * from JobAnswers where orderno = '"+order+
 			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
 				function(transaction, results, rowsArray){
-				//alert(rowsArray.length)
-						if(fldid=="PHOTO"){
-							//$("#imagePreview"+x[1]).attr("src",rowsArray[0].value)
+					if(rowsArray.length>0){
+						tabContents.push(rowsArray[0].value)
+						if(type=="PHOTO"){
+							$("#imagePreview"+item).attr("src",unescape(rowsArray[0].value))
 						
 				
-						}else if(fldid=="YN"){
+						}else if(type=="YN"){
 							if (rowsArray[0].value){
 							sap.ui.getCore().getElementById(fldid).setState(true)
 							}else{
 							sap.ui.getCore().getElementById(fldid).setState(false)
 							}
-						}else if(fldid=="TXT"){
+						}else if(type=="TXT"){
 							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
 							
-						}else if(fldid=="NUM"){
+						}else if(type=="NUM"){
 							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
-					 	}else if(fldid=="CHK"){
-					 		sap.ui.getCore().getElementById(fldid).setSelected()
-						}else if(fldid=="LTXT"){
+					 	}else if(type=="CHK"){
+
+					 		sap.ui.getCore().getElementById(fldid).setSelected(rowsArray[0].value)
+						}else if(type=="LTXT"){
 							sap.ui.getCore().getElementById(fldid).setValue(rowsArray[0].value)
-						}else if(fldid=="SIG"){
-							//$("#signaturePreview"+x[1]).attr("src"))
+						}else if(type=="SIG"){
+							sap.ui.getCore().getElementById("signaturePreview"+item).setSrc(unescape(rowsArray[0].value))
+							
 							
 						}
+					}else{
+						tabContents.push("--NOTSET--")
+					}
 			 },
 			 function(error, statement){
 				 alert("Error: " + error.message + " when updateOrderLatLong processing " + statement);
