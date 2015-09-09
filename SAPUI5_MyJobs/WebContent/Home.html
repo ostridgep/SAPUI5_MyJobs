@@ -333,8 +333,9 @@ var formDBReset = new sap.m.Dialog("dlgDBReset",{
 				    text: "Yes",
 				    type: 	sap.m.ButtonType.Accept,
 				    tap: [ function(oEvt) {		  
-				    	resetTables() 
+				    	
 				    	formDBReset.close()
+				    	resetTables() 
 						  } ]
 				}),
 				new sap.m.Button("dlgDBReseCancel", {

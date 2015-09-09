@@ -1596,15 +1596,15 @@ function resetTables() {
 
 					html5sql.process(sqlstatement,
 					 function(){
-						//requestDEMOData('TestData\\GASSurvey.json');
-						//requestDEMOData('TestData\\GASSurveyHdr.json');
-						//requestDEMOData('TestData\\TimeSheetNPJobs.json');
-						//requestDEMOData('TestData\\TimeSheetActivities.json');
+						var x = window.location.href.split("/")
+						if(x[x.length-1]=="Home.html"){
+							
+							setCounts()
+						}
 						requestDEMOData('TestData\\MySurveys.json');
 						SetConfigParam('LASTSYNC_REFERENCE', "20120101010101");
 						SetConfigParam('LASTSYNC_TRANSACTIONAL', "20120101010101");
-						//syncReference();
-						//syncTransactional();
+
 						
 
 
@@ -2147,7 +2147,7 @@ opMessage("Callback Notifications triggured");
 			//("alert updateing Texts");
 			html5sql.process(sqlstatement,
 							 function(transaction, results, rowsArray){
-								var x = window.location.href.split
+								var x = window.location.href.split("/")
 								if(x[x.length-1]=="Home.html"){
 									setCounts()
 								}
