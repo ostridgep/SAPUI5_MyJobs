@@ -1033,16 +1033,32 @@ function updateOperationStatus(orderno, opno, code, status)
 //  Create Routines
 //
 //*************************************************************************************************************************
-function saveTheAnswer1(order,opno,user,dt,item,task,value)
+function saveQuestionField(id,type,surveyid,dt)
 {
-	alert(value)
-	html5sql.process("select * from JobAnswers where orderno = '"+order+
-			"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+var	value = surveyid+":"+type+":"+id;
+	if(type=='S'){
+		value=sap.ui.getCore().getElementById(id).getValue()
+	}else if(type=='Y'){
+		value=sap.ui.getCore().getElementById(id).getState()
+	}else if(type=='M'){
+		value=sap.ui.getCore().getElementById(id).getValue()
+	}else if(type=='!'){
+		value=sap.ui.getCore().getElementById(id).getValue()
+	}else if(type==';'){
+		value=sap.ui.getCore().getElementById(id).getValue()
+	}else if(type=='Q'){
+		value=sap.ui.getCore().getElementById(id).getValue()
+	}else {
+		value = surveyid+":"+type+":"+id;
+		
+	}
+	html5sql.process("select * from JobAnswers where orderno = '"+CurrentOrderNo+
+			"' and opno = '"+CurrentOpNo+"' and user = '"+localStorage.getItem('MobileUser')+"' and item = '"+surveyid+"' and task = '"+id+"';",
 			function(transaction, results, rowsArray){
 				if(rowsArray.length>0){
-					html5sql.process("UPDATE JobAnswers SET updateddate = '"+dt+"' and value = '" +value+"'"+
-							" where orderno = '"+order+
-								"' and opno = '"+opno+"' and user = '"+user+"' and item = '"+item+"' and task = '"+task+"';",
+					html5sql.process("UPDATE JobAnswers SET updateddate = '"+dt+"', value = '" +value+"'"+
+							" where orderno = '"+CurrentOrderNo+
+								"' and opno = '"+CurrentOpNo+"' and user = '"+localStorage.getItem('MobileUser')+"' and item = '"+surveyid+"' and task = '"+id+"';",
 							 function(){
 								 
 							 },
@@ -1052,7 +1068,7 @@ function saveTheAnswer1(order,opno,user,dt,item,task,value)
 							);
 				}else{
 					html5sql.process("INSERT INTO  JobAnswers (orderno , opno, user, updateddate, item , task , value ) VALUES ("+
-							 "'"+order+"','"+opno+"','"+user+"','"+dt+"','"+item+"','"+task+"','"+value+"');",
+							 "'"+CurrentOrderNo+"','"+CurrentOpNo+"','"+localStorage.getItem('MobileUser')+"','"+dt+"','"+surveyid+"','"+id+"','"+value+"');",
 					 function(){
 						
 					 },

@@ -468,6 +468,7 @@ new sap.m.Button( {
     type: sap.m.ButtonType.Accept,
     tap: [ function(oEvt) {	
     	sap.ui.getCore().getElementById(selectedFormQuestionGroup).setType(sap.m.ButtonType.Accept)
+    	
     	formQuestions.close()
 		
     	} ]   
@@ -498,6 +499,7 @@ new sap.m.Button( {
 
 	  } ,
 	  beforeClose:function(){
+		  saveFormQuestions(selectedFormQuestionGroup)
 
 	  }
 	
@@ -1338,6 +1340,55 @@ SQLStatement1+="where surveyquestion.surveyid = '"+surveyID+"' and surveyquestio
 							); 
 			
 }
+function saveFormQuestions(x){
+	
+	var HTMLToOutput='';
+	var HTMLToOutput1='';
+	var SQLStatement="";
+	var SQLStatement1="";
+	var CurrentGroup="";
+	var currentSQ=""
+	var pars=x.split(":")
+	var surveyID=pars[1]
+	var groupID=pars[2]
+	var questionID=pars[3]
+	var questions=[];
+var hdrOP=false;
+var saveDate=getDate()+getTime()
+SQLStatement1="select surveyquestion.surveyid, surveyquestion.groupid, surveyquestion.questionid, surveyquestion.questiontype, surveyquestion.defaultvalue, surveyquestion.name, surveyquestion.title, surveyquestion.dependsonid, surveyquestion.dependsonval, "
+SQLStatement1+="surveysubquestion.subquestionid, surveysubquestion.subquestiontype, surveysubquestion.name as subquestionname, surveysubquestion.title as subquestiontitle from surveyquestion "
+SQLStatement1+="left join surveysubquestion on  "
+SQLStatement1+="surveysubquestion.surveyid = surveyquestion.surveyid and "
+SQLStatement1+="surveysubquestion.groupid = surveyquestion.groupid and "
+SQLStatement1+="surveysubquestion.questionid = surveyquestion.questionid "
+SQLStatement1+="where surveyquestion.surveyid = '"+surveyID+"' and surveyquestion.groupid = '"+groupID+"' order by surveyquestion.groupid, surveyquestion.questionid"	
+
+
+					html5sql.process(SQLStatement1,
+							 function(transaction, results, rowsArray){
+									
+									for (var nq = 0; nq < rowsArray.length; nq++) {
+										itemq = rowsArray[nq];
+										if(itemq.subquestiontype==null){
+											hdrOP=false;
+											saveQuestionField("Q:"+itemq.questionid,itemq.questiontype,surveyID,saveDate)									
+										}else{
+											if(hdrOP==false){
+												hdrOP=true;
+												saveQuestionField("Q:"+itemq.questionid,itemq.questiontype,surveyID,saveDate)									
+											}
+											saveQuestionField("Q:"+itemq.subquestionid,itemq.subquestiontype,surveyID,saveDate)												
+										}
+															}
+
+
+							 },
+							 function(error, statement){
+								alert(error+statement)
+							 }        
+							); 
+			
+}
 function BuildQuestionHeaders(surveyID){
 	
 	var HTMLToOutput='';
@@ -1514,7 +1565,7 @@ new sap.m.Input(id,{ type: sap.m.InputType.Input})
 		}
 
 }
-function BuildSubQuestionField(panelid,type,id,type,title){
+function BuildSubQuestionField(panelid,type,id,subtype,title){
 
 
 	if(type=='S'){
