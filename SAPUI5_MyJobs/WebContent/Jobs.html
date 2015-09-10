@@ -252,7 +252,7 @@ var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
  					})
 
             ]
-	 })
+	 }).addStyleClass("sapUiSizeCompact");
 var formSignature = new sap.m.Dialog("dlgSignature",{
     title:"Signature",
    
@@ -410,7 +410,7 @@ var formRoute = new sap.m.Dialog("dlgRoute",{
     		
 
       }      
-	 })	
+	 })
 var formPhoto = new sap.m.Dialog("dlgPhoto",{
     title:"Image",
    
@@ -545,7 +545,7 @@ var formSelectFloc = new sap.m.Dialog("dlgSelectFloc",{
 		
  			flocList
             ]
-	 })
+	 }).addStyleClass("sapUiSizeCompact");
 var detailFooter = new sap.m.Bar({
 		id: 'detailFooter',
 		contentLeft : [
@@ -755,8 +755,7 @@ var standardList  = new sap.m.List("JobList",
    					})
 
               ]
-	 })
-
+	 }).addStyleClass("sapUiSizeCompact");
 	var formChangeStatus = new sap.m.Dialog("dlgChangeStatus",{
 	      title:"Change Status",
 	      modal: true,
@@ -839,7 +838,7 @@ var standardList  = new sap.m.List("JobList",
 	              ]
 		 })
 	   		  ]
-	 })
+	 }).addStyleClass("sapUiSizeCompact");
 var firstEntry="none:-1";
 function prepareChangeStatus(){
 	if(currentStatus=="Job Init"){
