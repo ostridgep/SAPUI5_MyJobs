@@ -1,6 +1,8 @@
 <!DOCTYPE HTML>
 <html>
 <head>
+
+<meta http-equiv="Access-Control-Allow-Origin" content="*"/>
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 <title>MyJobs - Home</title>
 <script src="resources/sap-ui-core.js" type="text/javascript"
@@ -198,6 +200,8 @@ var formConfig = new sap.m.Dialog("dlgConfig",{
 
             ]
  })
+
+ 
 function loadLastSyncValues(){
 	sap.ui.getCore().getElementById('lastSyncServer').setValue(localStorage.getItem('ServerName'))
 	sap.ui.getCore().getElementById('RefDate').setText("Reference: "+formatDateTime(localStorage.getItem('LastSyncReference')))
@@ -603,10 +607,7 @@ var page  = new sap.m.Page('homePage',{
 	footer:new sap.m.Bar (
 			{
 				id : 'master-footer',
-				contentLeft : [
-
-
-						],
+				contentLeft : [],
 				contentRight : [
 
 				       		new sap.m.Button("Settings", {
@@ -670,8 +671,23 @@ function startBGSync()
       showMessage("Sorry, your browser does not support Web Workers ...");
    }
 }
+function httpGet(theUrl)
+{
+  var xmlHttp = null;
+
+  xmlHttp = new XMLHttpRequest();
+  xmlHttp.open( "GET", theUrl, false );
+  xmlHttp.send( );
+  return xmlHttp.responseText;
+}
+
 $(function() {
-	setCounts();
+
+		  
+
+
+    		
+    		setCounts();
 	
 	
 	startBGSync()

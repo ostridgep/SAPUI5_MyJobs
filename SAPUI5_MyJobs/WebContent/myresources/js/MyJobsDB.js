@@ -1307,7 +1307,7 @@ function createTables(type) {
 					 'CREATE TABLE IF NOT EXISTS HRTravel     			( id integer primary key autoincrement, requesteddate TEXT, startdate TEXT, enddate TEXT, travelfrom TEXT, travelto TEXT, status TEXT, comments TEXT);'+
 
 					 'CREATE TABLE IF NOT EXISTS JobAnswers     		( id integer primary key autoincrement, orderno TEXT, opno TEXT, user TEXT, updateddate TEXT, item TEXT, task TEXT, value TEXT);'+
-					 
+					 'CREATE TABLE IF NOT EXISTS StockSearch     		( id integer primary key autoincrement, materialno TEXT, description TEXT, depot TEXT, available TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS SurveyAnswers     		( id integer primary key autoincrement, orderno TEXT, opno TEXT, user TEXT, updateddate TEXT, surveyid TEXT, groupid TEXT, questionid TEXT, name TEXT, answer TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS Survey     			( id integer primary key autoincrement, surveyid TEXT, name TEXT);'+
 					 'CREATE TABLE IF NOT EXISTS SurveyGroup     		( id integer primary key autoincrement, surveyid TEXT, groupid TEXT, name TEXT, title TEXT);'+
@@ -1408,7 +1408,7 @@ function dropTables() {
 						'DROP TABLE IF EXISTS GASSurveyModel;'+
 						'DROP TABLE IF EXISTS GASSurvey;'+
 						'DROP TABLE IF EXISTS GASSurveyHDR;'+
-						
+						'DROP TABLE IF EXISTS StockSearch;'+
 						'DROP VIEW IF EXISTS viewoperationstatus;'+
 						'DROP TABLE IF EXISTS viewprioritycodes;';
 
@@ -1479,6 +1479,7 @@ function emptyTables(type) {
 						'DELETE FROM  GASSurveyMake;'+
 						'DELETE FROM  GASSurveyModel;'+
 						'DELETE FROM  GASSurvey;'+
+						'DELETE FROM  StockSearch;'+
 						'DELETE FROM  GASSurveyHDR;';
 						
 						
@@ -1590,6 +1591,7 @@ function resetTables() {
 					'DELETE FROM  GASSurveyMake;'+
 					'DELETE FROM  GASSurveyModel;'+
 					'DELETE FROM  GASSurvey;'+
+					'DELETE FROM  StockSearch;'+
 					'DELETE FROM  GASSurveyHDR;';
 					
 					
@@ -2848,6 +2850,33 @@ var sqlstatement="";
 
 
 	}
+}
+function materialsearchCB(data){
+
+
+	var n = 0;
+	
+
+var opTable = sap.ui.getCore().getElementById("MaterialsSearch");
+if(data.material.length>0){
+
+for(var cntx=0; cntx < data.material.length ; cntx++)
+{	
+	opTable.addItem (new sap.m.ColumnListItem({
+		cells : 
+			[
+			new sap.m.Text({text: data.material[cntx].id}),
+            new sap.m.Text({text: data.material[cntx].depot}),
+            new sap.m.Text({text: unescape(data.material[cntx].desc)}),
+			new sap.m.Text({text: data.material[cntx].available})   
+	 		]
+		}));
+	
+}
+
+}else{
+alert("nothing found")
+}
 }
 function tsnpjobsCB(jobs){
 var sqlstatement="";		

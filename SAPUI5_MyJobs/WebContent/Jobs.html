@@ -134,6 +134,64 @@ var newEQField = 			new sap.m.Input("NewEquipment",{ type: sap.m.InputType.Input
 	
 }]});
 newEQField._getValueHelpIcon().setSrc("sap-icon://bar-code");
+var formMaterialSearch = new sap.m.Dialog("dlgMaterial",{
+    title:"Material Search Results",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+				new sap.m.Button( {
+				    text: "Search",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {	
+				    	var opTable = sap.ui.getCore().getElementById('MaterialsSearch');
+						sap.ui.getCore().getElementById('MaterialsSearch').destroyItems();
+				        var url= "http://elderberry.uk.logica.com:8083/sap/bc/bsp/sap/zorderlist/MyJobsMaterialSearch.htm?jsonCallback=?&sap-client=700&sap-user=MOBILED&sap-password=logica&maktx="+sap.ui.getCore().getElementById('SearchMaterial').getValue()
+				        $.getJSON(url)
+				    	
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formMaterialSearch.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"80%",
+	            contentHeight: "70%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"Material"}),
+							new sap.m.Input("SearchMaterial",{type: sap.m.InputType.Input}),
+							
+
+									 
+					
+			               
+			                 
+						]
+ 					}),
+				new sap.m.Table("MaterialsSearch",{
+					columns:[
+					         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+					        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+					         new sap.m.Column({header: new sap.m.Label({text:"Depot"}),
+					        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
+					         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+					        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true}),
+					         new sap.m.Column({header: new sap.m.Label({text:"Qty"}),
+					        	 hAlign: 'Left',width: '10%',minScreenWidth : "" , demandPopin: true })       	                         
+			           	     ]
+				})
+            ]
+ })
 var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
     title:" Notification",
     modal: true,
@@ -613,6 +671,40 @@ var tconfFooter = new sap.m.Bar({
 					],
 	contentRight : [
 					new sap.m.Button("tconfFooterChangeStatus", {
+						 text: "Status",
+						 icon:"sap-icon://edit",
+						 press: [ function(){
+							 prepareChangeStatus();
+							 formChangeStatus.open();
+								}]
+					 })
+					]
+	
+})
+var materialFooter = new sap.m.Bar({
+	id: 'materialFooter',
+	contentLeft : [
+					new sap.m.Button({
+						 text: "Map",
+						 icon:"sap-icon://map",
+						 press: [ function(){
+							 formMap.open();
+
+								}]
+					 })
+					],
+	contentMiddle : [
+					new sap.m.Button({
+						 text: "Search",
+						 icon: "sap-icon://search",
+						 press: [ function(){
+							 
+							 formMaterialSearch.open();
+								}]
+					 })
+					],
+	contentRight : [
+					new sap.m.Button("materialFooterChangeStatus", {
 						 text: "Status",
 						 icon:"sap-icon://edit",
 						 press: [ function(){
@@ -1714,6 +1806,7 @@ sap.ui.getCore().getElementById('saveData').setVisible(false)
 					  if(oEvt.getParameters().key=="Assets"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="LongText"){oDetailPage.setFooter(detailFooter)}
 					  if(oEvt.getParameters().key=="Partners"){oDetailPage.setFooter(detailFooter)}
+					  if(oEvt.getParameters().key=="Materials"){oDetailPage.setFooter(materialFooter)}
 					  if(oEvt.getParameters().key=="TConf"){oDetailPage.setFooter(tconfFooter)}
 					}
 				],
@@ -1770,6 +1863,26 @@ new sap.m.IconTabFilter( 'OBJECTS',{
     									})
     									]          	                
         	                }),
+           	                new sap.m.IconTabFilter( 'MATERIALS',{
+         	                   key:'Materials',
+         	                   tooltip: 'Materials',
+         	                   icon: "sap-icon://energy-saving-lightbulb",
+            	                   content:[
+     									new sap.m.Table("MaterialsTable",{
+     										width:'100%',
+     										columns:[
+     										         
+     										         
+     										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+     										        	 hAlign: 'Left',width: '30%', minScreenWidth : "" , demandPopin: false}),
+     										         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+     										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true }),     	                         
+     										         new sap.m.Column({header: new sap.m.Label({text:"Qty"}),
+     										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
+     										        	 ]
+     									})
+     									]          	                
+         	                }),
            	                new sap.m.IconTabFilter( 'TCONF',{
          	                   key:'TConf',
          	                  tooltip: 'Time Confirmations',
@@ -2178,7 +2291,31 @@ html5sql.process("SELECT * FROM MyPartners where orderno = '"+orderNo+"' ;",
 			 //outputLogToDB(); 
 		 }        
 		);	
+//Materialss
+html5sql.process("SELECT * FROM MyMaterials where orderno = '"+orderNo+"';",
+		 function(transaction, results, rowsArray){
+			var n = 0;
+			var opTable = sap.ui.getCore().getElementById('MaterialsTable');
+			sap.ui.getCore().getElementById('MaterialsTable').destroyItems();
+			while (n < rowsArray.length) {
+				
+		
+				opTable.addItem (new sap.m.ColumnListItem({
+					cells : 
+						[
+						new sap.m.Text({text: rowsArray[n].material}),
+			            new sap.m.Text({text: rowsArray[n].description}),
+						new sap.m.Text({text: rowsArray[n].qty})  
+				 		]
+					}));
+				n++;
+			 }
 
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
  //Time Confirmations
 html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and opno = '"+OpNo+"' ;",
 		 function(transaction, results, rowsArray){
