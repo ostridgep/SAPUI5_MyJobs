@@ -6,7 +6,9 @@
 <title>MyJobs - Jobs</title>
 
 <script src="resources/sap-ui-core.js" type="text/javascript"
-	id="sap-ui-bootstrap" data-sap-ui-libs="sap.m,sap.ui.commons"
+	id="sap-ui-bootstrap" 
+	
+	data-sap-ui-libs="sap.m,sap.ui.commons"
 	data-sap-ui-theme="sap_bluecrystal">
 	
 </script>
@@ -84,6 +86,7 @@ var currentNotifNo="";
 var currentOrderListItem="";
 var tabContents=[]
 var tabFieldCnt=0
+var selectedOrderAssetID='';
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
@@ -181,13 +184,13 @@ var formMaterialSearch = new sap.m.Dialog("dlgMaterial",{
 				new sap.m.Table("MaterialsSearch",{
 					columns:[
 					         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
-					        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+					        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
 					         new sap.m.Column({header: new sap.m.Label({text:"Depot"}),
-					        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true}),
+					        	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: false}),
 					         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
 					        	 hAlign: 'Left',width: '40%',minScreenWidth : "" , demandPopin: true}),
 					         new sap.m.Column({header: new sap.m.Label({text:"Qty"}),
-					        	 hAlign: 'Left',width: '10%',minScreenWidth : "" , demandPopin: true })       	                         
+					        	 hAlign: 'Right',width: '10%',minScreenWidth : "" , demandPopin: true })       	                         
 			           	     ]
 				})
             ]
@@ -511,6 +514,57 @@ var formPhoto = new sap.m.Dialog("dlgPhoto",{
 
 	
 	 })
+var formAssetDetails = new sap.m.Dialog("dlgAssetDetails",{
+    title:"Asset Details",
+   
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+new sap.m.Button( {
+    text: "Save",
+    icon:"sap-icon://save",
+    type: sap.m.ButtonType.Accept,
+    tap: [ function(oEvt) {	
+    	
+    	
+    	formAssetDetails.close()
+		
+    	} ]   
+}),
+
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formAssetDetails.close()} ]   
+					}),
+					
+					],					
+    content:[
+
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+    	  formAssetDetails.destroyContent();
+    	  
+    	  BuildFormAssets(selectedOrderAssetID)
+
+      },
+      afterOpen:function(){  
+
+	  } ,
+	  beforeClose:function(){
+		  
+
+	  }
+	
+	 }).addStyleClass("sapUiSizeCompact")
 var formQuestions = new sap.m.Dialog("dlgQuestions",{
     title:"",
    
@@ -1380,6 +1434,146 @@ html5sql.process(SQLStatement,
 
 
 }
+function BuildFormAssets(assetid){
+	var asset_id=""
+	var asset_name=""
+	var asset_type=""
+	
+	
+	
+	var	tabBar  = new sap.m.IconTabBar('AssetDetailsTabBar',
+				{
+					expanded:'{device>/isNoPhone}',
+
+					select:[function(oEvt) {	
+						
+						  if(oEvt.getParameters().key=="AssetCharacteristics"){
+							  //oDetailPage.setFooter(detailFooter)
+							  }
+						  if(oEvt.getParameters().key=="AssetLongText"){
+							  //oDetailPage.setFooter(detailFooter)
+							  }
+						  if(oEvt.getParameters().key=="AssetMeasurementPoints"){
+							  //oDetailPage.setFooter(detailFooter)
+							  }
+						  if(oEvt.getParameters().key=="AssetHistory"){
+							  //oDetailPage.setFooter(materialFooter)
+							  }
+						  
+						}
+					],
+					
+					items: [
+
+	
+	       	                new sap.m.IconTabFilter( {
+	    	                   key:'AssetLongText',
+	    	                   tooltip: 'Long Text',
+	    	                   icon: "sap-icon://document-text",
+	    	                   content:[
+										new sap.m.Text( 'AssetLongTextContent',{})
+	    	                            ]
+	    	                }),
+	       	                
+	    	                new sap.m.IconTabFilter( {
+	    	            	    key:'AssetCharacteristics',
+	    	            	    tooltip: 'Characteristics',
+	    	            	    icon: "sap-icon://form",
+	    	            	       	                   content:[
+	    	            	       	        	               
+	    	            									new sap.m.Table("AssetCharacteristicsTable",{
+	    	            										
+	    	            									  
+	    	            										columns:[
+	    	            										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+	    	            										        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
+	    	            										         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+	    	            										        	 hAlign: 'Left',width: '25%',minScreenWidth : "" , demandPopin: true}),
+	    	            										         new sap.m.Column({header: new sap.m.Label({text:"Value"}),
+	    	            										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })       	                         
+	    	            								           	     ]
+	    	            								           	  
+
+	    	            									})
+	    	            									]
+	    	            						           	  
+	    	            					    }),
+	       	                new sap.m.IconTabFilter( {
+	        	                   key:'AssetMeasurementPoints',
+	        	                   tooltip: 'Measurement Points',
+	        	                   icon: "sap-icon://measuring-point",
+	           	                   content:[
+	    									new sap.m.Table("AssetMeasurementPointsTable",{
+	    										width:'100%',
+	    										columns:[
+	    										         
+	    										         
+	    										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+	    										        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: false}),
+	    										         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
+	    										        	 hAlign: 'Left',width: '35%',minScreenWidth : "" , demandPopin: true}),
+	    										         new sap.m.Column({header: new sap.m.Label({text:"Value"}),
+	    										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true })
+	    										        	 ]
+	    									})
+	    									]          	                
+	        	                }),
+	           	                new sap.m.IconTabFilter( {
+	         	                   key:'AssetHistory',
+	         	                   tooltip: 'Order & Notification History',
+	         	                   icon: "sap-icon://work-history",
+	            	                   content:[
+	     									new sap.m.Table("AssetHistoryTable",{
+	     										width:'100%',
+	     										columns:[
+	     										         
+	     										         
+	     										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+	     										        	 hAlign: 'Left',width: '30%', minScreenWidth : "" , demandPopin: false}),
+	     										         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
+	     										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true }),     	                         
+	     										         new sap.m.Column({header: new sap.m.Label({text:"Qty"}),
+	     										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
+	     										        	 ]
+	     									})
+	     									]          	                
+	         	                })				            	                
+	       	                ]
+
+
+				});
+
+		html5sql.process("select * from myassets where orderno = '"+CurrentOrderNo+"' and id = '"+assetid+"'",
+				 function(transaction, results, rowsArray){
+						if(rowsArray.length>0){
+							asset_id= rowsArray[0].id
+							asset_name= rowsArray[0].name
+							asset_type= rowsArray[0].type
+							var objectHeader  = new sap.m.ObjectHeader('AssetHeader',
+									{
+												
+										title:asset_name,
+										number:asset_id,
+										numberUnit:asset_type,
+									});
+
+
+									
+									formAssetDetails.addContent(objectHeader)	
+									formAssetDetails.addContent(tabBar)
+									formAssetDetails.addContent(assetHistory)
+						}
+				 },
+				 function(error, statement){
+					
+				 }        
+				); 
+	
+
+
+
+			
+}
 function BuildFormQuestions(x){
 	
 	var HTMLToOutput='';
@@ -1820,6 +2014,13 @@ new sap.m.IconTabFilter( 'OBJECTS',{
        	                   content:[
        	        	               
 								new sap.m.Table("AssetsTable",{
+									mode: sap.m.ListMode.SingleSelectMaster,
+									selectionChange: function(oEvt){
+										var x=oEvt.getParameter("listItem").getId().split(":")
+										
+										selectedOrderAssetID=x[1];
+										formAssetDetails.open()
+								    },
 									columns:[
 									         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
 									        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
@@ -1828,8 +2029,11 @@ new sap.m.IconTabFilter( 'OBJECTS',{
 									         new sap.m.Column({header: new sap.m.Label({text:"Name"}),
 									        	 hAlign: 'Left',width: '65%',minScreenWidth : "" , demandPopin: true })       	                         
 							           	     ]
+							           	  
+
 								})
 								]
+					           	  
 				    }),
        	                new sap.m.IconTabFilter( 'LONGTEXT',{
     	                   key:'LongText',
@@ -1894,19 +2098,19 @@ new sap.m.IconTabFilter( 'OBJECTS',{
      										         
      										         
      										         new sap.m.Column({header: new sap.m.Label({text:"No"}),
-     										        	 hAlign: 'Left',width:'12%', minScreenWidth : "" , demandPopin: false}),
+     										        	 hAlign: 'Left',width:'10%', minScreenWidth : "" , demandPopin: false}),
          										     new sap.m.Column({header: new sap.m.Label({text:"Type"}),
-         										         hAlign: 'Left',width:'7%', minScreenWidth : "" , demandPopin: false}),
+         										         hAlign: 'Left',width:'10%', minScreenWidth : "" , demandPopin: false}),
              										 new sap.m.Column({header: new sap.m.Label({text:"Start"}),
      										        	 hAlign: 'Left',width:'15%', minScreenWidth : "" , demandPopin: false}),
              										 new sap.m.Column({header: new sap.m.Label({text:"End"}),
      										        	 hAlign: 'Left',width:'15%', minScreenWidth : "small" , demandPopin: true}),
              										 new sap.m.Column({header: new sap.m.Label({text:"Duration"}),
-     										        	 hAlign: 'Left',width:'10%', minScreenWidth : "small" , demandPopin: true}),
-	         										 new sap.m.Column({header: new sap.m.Label({text:"Final"}),
-	 										        	 hAlign: 'Left',width:'5%', minScreenWidth : "small" , demandPopin: true}),
+     										        	 hAlign: 'Right',width:'10%', minScreenWidth : "small" , demandPopin: true}),
+	         										 new sap.m.Column({header: new sap.m.Label({text:"Fin"}),
+	 										        	 hAlign: 'Left',width:'8%', minScreenWidth : "small" , demandPopin: true}),
 	 										         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
-	 										        	 hAlign: 'Left',width:'36%', minScreenWidth : "small" , demandPopin: true}),                    
+	 										        	 hAlign: 'Left',width:'32%', minScreenWidth : "small" , demandPopin: true}),                    
 								           	     ]
      									})
      									]          	                
@@ -2245,17 +2449,20 @@ html5sql.process("SELECT * FROM MyAssets where orderno = '"+orderNo+"' ;",
 		 function(transaction, results, rowsArray){
 			var n = 0;
 			var opTable = sap.ui.getCore().getElementById('AssetsTable');
+;
 			sap.ui.getCore().getElementById('AssetsTable').removeAllItems();
 			while (n < rowsArray.length) {
 				
 		
-				opTable.addItem (new sap.m.ColumnListItem({
+				opTable.addItem (new sap.m.ColumnListItem("Asset:"+rowsArray[n].id,{
+					
 					cells : 
 						[
 						new sap.m.Text({text: rowsArray[n].id}),
 			            new sap.m.Text({text: rowsArray[n].type}),
 						new sap.m.Text({text: rowsArray[n].name})   
-				 		]
+				 		],
+
 					}));
 				n++;
 			 }
@@ -2328,7 +2535,7 @@ html5sql.process("SELECT * FROM MyTimeConfs where orderno = '"+orderNo+"' and op
 				opTable.addItem (new sap.m.ColumnListItem({
 					cells : 
 						[
-						new sap.m.Text({text: rowsArray[n].confno}),
+						new sap.m.Text({text: parseInt(rowsArray[n].confno,10)}),
 			            new sap.m.Text({text: rowsArray[n].type}),
 						new sap.m.Text({text: formatDateTime(rowsArray[n].date+rowsArray[n].time)}),
 			            new sap.m.Text({text: formatDateTime(rowsArray[n].enddate+rowsArray[n].endtime)}),
