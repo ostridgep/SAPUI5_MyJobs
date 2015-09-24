@@ -87,6 +87,7 @@ var currentOrderListItem="";
 var tabContents=[]
 var tabFieldCnt=0
 var selectedOrderAssetID='';
+var selectedReserverMaterial='';
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
@@ -182,6 +183,15 @@ var formMaterialSearch = new sap.m.Dialog("dlgMaterial",{
 						]
  					}),
 				new sap.m.Table("MaterialsSearch",{
+					mode: sap.m.ListMode.SingleSelectMaster,
+					selectionChange: function(evt){
+						
+						//selectedReserverMaterial=oEvt.getParameter("selectedItem").getKey()
+						
+						//sap.ui.getCore().byId("NewGroup").getSelectedItem().getKey()
+						selectedReserverMaterial="RS:"+evt.getParameter("listItem").getCells()[0].getText()+":"+evt.getParameter("listItem").getCells()[1].getText()+":"+evt.getParameter("listItem").getCells()[2].getText()+":"+evt.getParameter("listItem").getCells()[3].getText()
+						formReserveMaterial.open()
+				    },
 					columns:[
 					         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
 					        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
@@ -194,6 +204,216 @@ var formMaterialSearch = new sap.m.Dialog("dlgMaterial",{
 			           	     ]
 				})
             ]
+ })
+var formReserveMaterial = new sap.m.Dialog("dlgMaterialReserve",{
+    title:"Reserve Material for Job",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+				new sap.m.Button( {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formReserveMaterial.close()
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formReserveMaterial.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"50%",
+	            contentHeight: "50%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"Material ID"}),
+							new sap.m.Input("ReserveMaterialID",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Depot"}),
+							new sap.m.Input("ReserveMaterialDepot",{type: sap.m.InputType.Input, enabled: false}),							
+			                new sap.m.Label({text:"Description"}),
+							new sap.m.Input("ReserveMaterialDesc",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Qty Available"}),
+							new sap.m.Input("ReserveMaterialAvailable",{type: sap.m.InputType.Input, enabled: false}),									 
+			                new sap.m.Label({text:"Qty Required"}),
+							new sap.m.Input("ReserveMaterialRequired",{type: sap.m.InputType.Input}),					
+			               
+			                 
+						]
+ 					}),
+
+            ],
+            beforeOpen:function(){
+            	var x =selectedReserverMaterial.split(":")
+            	sap.ui.getCore().byId("ReserveMaterialID").setValue(x[1])
+				sap.ui.getCore().byId("ReserveMaterialDepot").setValue(x[2])
+				sap.ui.getCore().byId("ReserveMaterialDesc").setValue(x[3])
+				sap.ui.getCore().byId("ReserveMaterialAvailable").setValue(x[4])
+            },
+ })
+var formAssetCharacteristic = new sap.m.Dialog("dlgAssetCharacteristic",{
+    title:"Asset Characteristic",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+				new sap.m.Button( {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formAssetCharacteristic.close()
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formAssetCharacteristic.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"50%",
+	            contentHeight: "50%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"ID"}),
+							new sap.m.Input("CharacteristicID",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Description"}),
+							new sap.m.Input("CharacteristicDescription",{type: sap.m.InputType.Input, enabled: false}),															 
+			                new sap.m.Label({text:"Value"}),
+							new sap.m.Input("CharacteristicValue",{type: sap.m.InputType.Input}),					
+			               
+			                 
+						]
+ 					}),
+
+            ],
+            beforeOpen:function(){
+            	var x =selectedCharacteristic.split(":")
+            	sap.ui.getCore().byId("CharacteristicID").setValue(x[0])
+				sap.ui.getCore().byId("CharacteristicDescription").setValue(x[1])
+				sap.ui.getCore().byId("CharacteristicValue").setValue(x[2])
+
+            },
+ })
+var formAssetMeasurementPoint = new sap.m.Dialog("dlgAssetMeasurementPoint",{
+    title:"Asset Mdeasurement Point",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+				new sap.m.Button( {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formAssetMeasurementPoint.close()
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formAssetMeasurementPoint.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"50%",
+	            contentHeight: "50%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"ID"}),
+							new sap.m.Input("AssetMeasurementPointID",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Description"}),
+							new sap.m.Input("AssetMeasurementPointDescription",{type: sap.m.InputType.Input, enabled: false}),															 
+			                new sap.m.Label({text:"Value"}),
+							new sap.m.Input("AssetMeasurementPointValue",{type: sap.m.InputType.Input}),					
+			               
+			                 
+						]
+ 					}),
+
+            ],
+            beforeOpen:function(){
+            	var x =selectedCharacteristic.split(":")
+            	sap.ui.getCore().byId("AssetMeasurementPointID").setValue(x[0])
+				sap.ui.getCore().byId("AssetMeasurementPointDescription").setValue(x[1])
+				sap.ui.getCore().byId("AssetMeasurementPointValue").setValue(x[2])
+
+            },
+ })
+var formMaterialConsume = new sap.m.Dialog("dlgMaterialConsume",{
+    title:"Consume Material",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+				new sap.m.Button( {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formMaterialConsume.close()
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formMaterialConsume.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"50%",
+	            contentHeight: "50%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+							
+			                new sap.m.Label({text:"ID"}),
+							new sap.m.Input("MaterialConsumeID",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Description"}),
+							new sap.m.Input("MaterialConsumeDescription",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Assigned"}),
+							new sap.m.Input("MaterialConsumeAssigned",{type: sap.m.InputType.Input, enabled: false}),
+			                new sap.m.Label({text:"Used"}),
+							new sap.m.Input("MaterialConsumeUsed",{type: sap.m.InputType.Input}),					
+			               
+			                 
+						]
+ 					}),
+
+            ],
+            beforeOpen:function(){
+            	var x =selectedCharacteristic.split(":")
+            	sap.ui.getCore().byId("MaterialConsumeID").setValue(x[0])
+				sap.ui.getCore().byId("MaterialConsumeDescription").setValue(x[1])
+				sap.ui.getCore().byId("MaterialConsumeAssigned").setValue(x[2])
+
+            },
  })
 var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
     title:" Notification",
@@ -1498,7 +1718,15 @@ function BuildFormAssets(assetid){
 	    	            	       	        	               
 	    	            									new sap.m.Table("AssetCharacteristicsTable",{
 	    	            										
-	    	            									  
+	    	            										mode: sap.m.ListMode.SingleSelectMaster,
+	    	            										selectionChange: function(evt){
+	    	            											
+	    	            											//selectedReserverMaterial=oEvt.getParameter("selectedItem").getKey()
+	    	            											
+	    	            											//sap.ui.getCore().byId("NewGroup").getSelectedItem().getKey()
+	    	            											selectedCharacteristic=evt.getParameter("listItem").getCells()[0].getText()+":"+evt.getParameter("listItem").getCells()[1].getText()+":"+evt.getParameter("listItem").getCells()[2].getText()
+	    	            											formAssetCharacteristic.open()
+	    	            									    },
 	    	            										columns:[
 	    	            										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
 	    	            										        	 hAlign: 'Left',width: '25%', minScreenWidth : "" , demandPopin: false}),
@@ -1520,6 +1748,15 @@ function BuildFormAssets(assetid){
 	           	                   content:[
 	    									new sap.m.Table("AssetMeasurementPointsTable",{
 	    										width:'100%',
+	    										mode: sap.m.ListMode.SingleSelectMaster,
+        										selectionChange: function(evt){
+        											
+        											//selectedReserverMaterial=oEvt.getParameter("selectedItem").getKey()
+        											
+        											//sap.ui.getCore().byId("NewGroup").getSelectedItem().getKey()
+        											selectedCharacteristic=evt.getParameter("listItem").getCells()[0].getText()+":"+evt.getParameter("listItem").getCells()[1].getText()+":"+evt.getParameter("listItem").getCells()[2].getText()
+        											formAssetMeasurementPoint.open()
+        									    },
 	    										columns:[
 	    										         
 	    										         
@@ -2246,6 +2483,15 @@ new sap.m.IconTabFilter( 'OBJECTS',{
             	                   content:[
      									new sap.m.Table("MaterialsTable",{
      										width:'100%',
+    										mode: sap.m.ListMode.SingleSelectMaster,
+    										selectionChange: function(evt){
+    											
+    											//selectedReserverMaterial=oEvt.getParameter("selectedItem").getKey()
+    											
+    											//sap.ui.getCore().byId("NewGroup").getSelectedItem().getKey()
+    											selectedCharacteristic=evt.getParameter("listItem").getCells()[0].getText()+":"+evt.getParameter("listItem").getCells()[1].getText()+":"+evt.getParameter("listItem").getCells()[2].getText()
+    											formMaterialConsume.open()
+    									    },
      										columns:[
      										         
      										         

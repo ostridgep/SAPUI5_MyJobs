@@ -2881,6 +2881,7 @@ if(data.material.length>0){
 for(var cntx=0; cntx < data.material.length ; cntx++)
 {	
 	opTable.addItem (new sap.m.ColumnListItem({
+		key:"RM:"+data.material[cntx].id+":"+data.material[cntx].depot+":"+data.material[cntx].desc+":"+data.material[cntx].available,
 		cells : 
 			[
 			new sap.m.Text({text: data.material[cntx].id}),
