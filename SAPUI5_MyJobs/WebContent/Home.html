@@ -76,7 +76,7 @@ function loadPinCodeValues(){
 	sap.ui.getCore().getElementById('PinCode').setValue(localStorage.getItem('PinCode'))	
 }
 var formPinCode = new sap.m.Dialog("dlgPinCode",{
-    title:"Set Login Pincode",
+    title:"Set Login Pincode & Vehicle Reg",
     modal: true,
     contentWidth:"1em",
     buttons: [
@@ -87,7 +87,7 @@ var formPinCode = new sap.m.Dialog("dlgPinCode",{
 
 					    
 						updatePinCode(sap.ui.getCore().getElementById('PinCode').getValue());
-						
+						updateVehicleReg(sap.ui.getCore().getElementById('VehicleReg').getValue());
 					   
 						formPinCode.close()} ]
 				}),   
@@ -107,7 +107,9 @@ var formPinCode = new sap.m.Dialog("dlgPinCode",{
 				content : [
 							
 			                new sap.m.Label({text:"Pin Code"}),
-							new sap.m.Input("PinCode",{type: sap.m.InputType.Number})
+							new sap.m.Input("PinCode",{type: sap.m.InputType.Number}),
+							new sap.m.Label({text:"Vehicle reg"}),
+							new sap.m.Input("VehicleReg",{type: sap.m.InputType.Text})
 							
 
 									 
@@ -379,7 +381,7 @@ var formSettings = new sap.m.Dialog("dlgSettings",{
 				content : [
 				           new sap.m.Label({text:""}),
 							new sap.m.Button("pinCode", {
-							    text: "Set Pincode",
+							    text: "Set Pincode & Vehicle Reg",
 							    type: 	sap.m.ButtonType.Accept,
 							    tap: [ function(oEvt) {		  
 									 

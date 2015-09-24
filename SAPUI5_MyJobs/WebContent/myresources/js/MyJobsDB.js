@@ -254,6 +254,23 @@ var user=localStorage.getItem('MobileUser')
 	);
 
 }
+function updateVehicleReg(reg){
+
+	var user=localStorage.getItem('MobileUser')
+			
+
+			sqlstatement="UPDATE MyUserDets SET vehiclereg = '"+reg+"' WHERE mobileuser = '"+user+"';";
+			
+		html5sql.process(sqlstatement,
+		 function(){
+			 //alert("Success dropping Tables");
+		 },
+		 function(error, statement){
+			opMessage("Error: " + error.message + " when updateing Vehicle Reg " + statement);
+		 }        
+		);
+
+	}
 function SetConfigParam(paramName, paramValue){
 
 			if (paramName=='SERVERNAME'){
