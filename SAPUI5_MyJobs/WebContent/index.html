@@ -13,7 +13,111 @@
 <script src="myresources/js/bqsync.js"></script>
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
+
+<style>
+.KeyPad .sapMBtn {
+	  margin: 5px;
+	  width: 60px !important;
+	}
+
+	.KeyPad .sapMVBox {
+	  border: 1px solid #aaa;
+	  background-color: rgba(200, 200, 200, 0.3);;
+	  width: 220px
+	}
+
+	.KeyPad .sapMHBox {
+	  margin-left: 5px;
+	}
+</style>
 <script type="text/javascript">
+var PinCodePos=1;
+sap.ui.core.Control.extend('KeyPad', {
+  metadata: {
+    events: {
+      press: {}
+    }
+  },
+
+  init: function() {
+    PinCodePos=1;
+
+    var that = this;
+    function createBtn(d) {
+       return new sap.m.Button({
+         text: d,
+         press: function() {
+           that.firePress({value: d});
+         }
+       });
+    }
+
+    this.vbox = new sap.m.VBox({
+    	 items: [	
+        new sap.m.HBox({ items: [ 
+          new sap.m.Input("NewPassword1",{type: sap.m.InputType.Password}), 
+          new sap.m.Input("NewPassword2",{type: sap.m.InputType.Password}), 
+          new sap.m.Input("NewPassword3",{type: sap.m.InputType.Password}), 
+          new sap.m.Input("NewPassword4",{type: sap.m.InputType.Password}),
+      ]
+    }),
+        new sap.m.HBox({ items: [ createBtn('1'), createBtn('2'), createBtn('3')] }),
+        new sap.m.HBox({ items: [ createBtn('4'), createBtn('5'), createBtn('6')] }),
+        new sap.m.HBox({ items: [ createBtn('7'), createBtn('8'), createBtn('9')] }),
+        new sap.m.HBox({ items: [ createBtn('CLR'), createBtn('0'), createBtn('OK')] }),
+      ]
+    });
+  },
+
+  exit: function() {
+    if (this.vbox) {
+      this.vbox.destroy();
+      delete this.vbox;
+    }
+  },
+
+  renderer: function(oRm, oControl) {
+    oRm.write('<div align="center"');
+    oRm.writeControlData(oControl);
+    oRm.addClass('KeyPad');
+    oRm.writeClasses();
+    oRm.write('>');
+    oRm.renderControl(oControl.vbox);
+    oRm.write('</div>');
+  }
+});
+
+var kp = new KeyPad({
+  press: function(e) {
+    //sap.m.MessageToast.show(e.getParameter('value'));
+    if (e.getParameter('value')=="CLR"){
+      sap.ui.getCore().getElementById("NewPassword1").setValue('');
+sap.ui.getCore().getElementById("NewPassword2").setValue('');
+sap.ui.getCore().getElementById("NewPassword3").setValue('');
+sap.ui.getCore().getElementById("NewPassword4").setValue('');
+      PinCodePos=1;
+    
+    }else if (e.getParameter('value')=="OK"){
+    	checkLogin(1)
+      
+
+    }else{
+    if(PinCodePos==1){
+      sap.ui.getCore().getElementById("NewPassword1").setValue(e.getParameter('value'));
+      PinCodePos++;
+    }else if(PinCodePos==2){
+      sap.ui.getCore().getElementById("NewPassword2").setValue(e.getParameter('value'));
+      PinCodePos++;
+    }else    if(PinCodePos==3){
+      sap.ui.getCore().getElementById("NewPassword3").setValue(e.getParameter('value'));
+      PinCodePos++;
+    }else    if(PinCodePos==4){
+      sap.ui.getCore().getElementById("NewPassword4").setValue(e.getParameter('value'));
+      PinCodePos++;
+    }
+    }
+  }
+});
 
 function checkLogin(n)
 {
@@ -22,7 +126,10 @@ var user=""
 var pw=""
 var pin=""
 if(n==1){
-	pin=sap.ui.getCore().getElementById("Pin").getValue()
+	pin=           sap.ui.getCore().getElementById("NewPassword1").getValue()+
+    sap.ui.getCore().getElementById("NewPassword2").getValue()+
+    sap.ui.getCore().getElementById("NewPassword3").getValue()+
+    sap.ui.getCore().getElementById("NewPassword4").getValue()
 	SQLStatement="SELECT * from MyUserDets where pincode = '"+pin+"'"
 }else{
 	user=sap.ui.getCore().getElementById("User").getValue()
@@ -307,9 +414,11 @@ var formCreateDB = new sap.m.Dialog("dlgCreateDB",{
 						new sap.ui.layout.form.SimpleForm({
 							title: "Enter your Pincode",
 							maxContainerCols : 2,
+							alignItems:"Center",
+						     
 							content : 	[							
-							
-										new sap.m.Label({text:"Pin Code"}),
+										kp,
+/* 										new sap.m.Label({text:"Pin Code"}),
 										new sap.m.Input("Pin",{type: sap.m.InputType.Number}),
 										new sap.m.Label({text:""}),
 							       		new sap.m.Button( {
@@ -321,11 +430,14 @@ var formCreateDB = new sap.m.Dialog("dlgCreateDB",{
 							       							checkLogin(1)
 							       							}
 							       				        ]
-							       			 })
+							       			 }) */
 										]
 		 						})
 						)
-					
+						sap.ui.getCore().getElementById("NewPassword1").setValue('');
+						sap.ui.getCore().getElementById("NewPassword2").setValue('');
+						sap.ui.getCore().getElementById("NewPassword3").setValue('');
+						sap.ui.getCore().getElementById("NewPassword4").setValue('');
 					}else{
 						
 						
