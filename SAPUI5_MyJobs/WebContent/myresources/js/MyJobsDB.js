@@ -544,6 +544,7 @@ var SAPServerSuffix="";
 									syncTransactionalDetsUpdated=false;
 									SAPServerPrefix=$.trim(rowsArray[0].paramvalue);
 									requestSAPData("MyJobsOrders.htm",SAPServerSuffix);
+									requestSAPData("MyJobsOrdersObjects.htm",SAPServerSuffix);
 									requestSAPData("MyJobsNotifications.htm",SAPServerSuffix);
 									requestSAPData("MyJobsMessages.htm",SAPServerSuffix);
 						 }
@@ -865,7 +866,7 @@ var SAPServerSuffix="";
 							requestSAPData("MyJobsUsers.htm",SAPServerSuffix);
 							requestSAPData("MyJobsVehicles.htm",SAPServerSuffix);
 							requestSAPData("MyJobsFunclocs.htm",SAPServerSuffix);
-							requestSAPData("MyJobsEquipment.htm",SAPServerSuffix);
+							//requestSAPData("MyJobsEquipment.htm",SAPServerSuffix);
 						 }
 						 
 					},
@@ -2943,9 +2944,19 @@ var sqlstatement="";
 
 	}
 }
-function orderobjectsCB1(MyObjects){
+function existsInArray(array,val){
+	
+	retv=false;
+	for(var cntx=0; cntx <   array.length ; cntx++){
+		if(array[cntx]==val){
+			retv=true;
+			cntx=array.length;
+		}
+	}
+	return retv
 }
 function orderobjectsCB(MyObjects){
+var objectsArray=[];
 var sqlstatement="";		
 
 	if(MyObjects.orderobjects.length>0){
@@ -2962,6 +2973,9 @@ var sqlstatement="";
 			sqlstatement+='DELETE FROM AssetInstalledEquip;';
 			opMessage("Loading "+MyObjects.orderobjects.length+" Assets");
 			for(var cntx=0; cntx <   MyObjects.orderobjects.length ; cntx++){
+			  if(!existsInArray(objectsArray,MyObjects.orderobjects[cntx].objtype+":"+MyObjects.orderobjects[cntx].objid))
+				{
+				objectsArray.push(MyObjects.orderobjects[cntx].objtype+":"+MyObjects.orderobjects[cntx].objid)
 				objtype=MyObjects.orderobjects[cntx].objtype;
 				objid=MyObjects.orderobjects[cntx].objid;
 				objshorttext=MyObjects.orderobjects[cntx].shorttext; 
@@ -2971,60 +2985,61 @@ var sqlstatement="";
 				sqlstatement+='INSERT INTO Assets (type , id , shorttext , address, workcenter ) VALUES ("'+objtype+'","'+  objid+'","'+ objshorttext+'","'+ objaddress+'","'+ objswerk+'");';
 				//Loop and write Classvals to DB
 
-				// opMessage("Loading "+MyObjects.orderobjects[cntx].classval.length+" Class Vals");
+				 opMessage("Loading "+MyObjects.orderobjects[cntx].classval.length+" Class Vals");
 				
-				// for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].classval.length ; opscnt++)
-					// {	
+				for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].classval.length ; opscnt++)
+					{	
 					
-					// sqlstatement+='INSERT INTO AssetClassVals (type , id, charact , valuechar , valueto , valueneutral , description) VALUES ('+ 
-						// '"'+objtype+'",'+
-						 // '"'+objid+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].classval[opscnt].charact+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].classval[opscnt].valuechar+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].classval[opscnt].valueto+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].classval[opscnt].valueneutralv 
-						 // '"'+MyObjects.orderobjects[cntx].classval[opscnt].description+'");'
+					sqlstatement+='INSERT INTO AssetClassVals (type , id, charact , valuechar , valueto , valueneutral , description) VALUES ('+ 
+						'"'+objtype+'",'+
+						 '"'+objid+'",'+
+						 '"'+MyObjects.orderobjects[cntx].classval[opscnt].charact+'",'+
+						 '"'+MyObjects.orderobjects[cntx].classval[opscnt].valuechar+'",'+
+						 '"'+MyObjects.orderobjects[cntx].classval[opscnt].valueto+'",'+
+						 '"'+MyObjects.orderobjects[cntx].classval[opscnt].valueneutralv +'",'+
+						 '"'+MyObjects.orderobjects[cntx].classval[opscnt].description+'");'
 				
-					// }
+				 }
 				//Loop and write Measurement Points to DB
 
-				// opMessage("Loading "+MyObjects.orderobjects[cntx].measpoint.length+" Mesurement Points");
+				opMessage("Loading "+MyObjects.orderobjects[cntx].measpoint.length+" Mesurement Points");
 				
-				// for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].measpoint.length ; opscnt++)
-					// {	
+				for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].measpoint.length ; opscnt++)
+					{	
 					
-					// sqlstatement+='INSERT INTO AssetMeasurementPoints (type , id, mpoint  , description) VALUES ( '+
-						// '"'+objtype+'",'+
-						 // '"'+objid+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].measpoint[opscnt].mpoint+'",'+ 
-						 // '"'+MyObjects.orderobjects[cntx].measpoint[opscnt].description+'");'
+					sqlstatement+='INSERT INTO AssetMeasurementPoints (type , id, mpoint  , description) VALUES ( '+
+						'"'+objtype+'",'+
+						  '"'+objid+'",'+
+						 '"'+MyObjects.orderobjects[cntx].measpoint[opscnt].mpoint+'",'+ 
+						 '"'+MyObjects.orderobjects[cntx].measpoint[opscnt].description+'");'
 				
-					// }
+					}
 			
 				//Loop and write Installed Equipment to DB
 
-				// opMessage("Loading "+MyObjects.orderobjects[cntx].installedquip.length+" Installed Equipment");
+				opMessage("Loading "+MyObjects.orderobjects[cntx].installedquip.length+" Installed Equipment");
 				
-				// for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].installedquip.length ; opscnt++)
-					// {	
+				 for(var opscnt=0; opscnt < MyObjects.orderobjects[cntx].installedquip.length ; opscnt++)
+					{	
 					
-					// sqlstatement+='INSERT INTO AssetInstalledEquip (type , id, eqno , description) VALUES ( '+
-						// '"'+objtype+'",'+
-						 // '"'+objid+'",'+
-						 // '"'+MyObjects.orderobjects[cntx].installedquip[opscnt].eqno+'",'+ 
-						 // '"'+MyObjects.orderobjects[cntx].installedquip[opscnt].type+'");'
+					sqlstatement+='INSERT INTO AssetInstalledEquip (type , id, eqno , description) VALUES ( '+
+					 '"'+objtype+'",'+
+						  '"'+objid+'",'+
+						  '"'+MyObjects.orderobjects[cntx].installedquip[opscnt].eqno+'",'+ 
+						  '"'+MyObjects.orderobjects[cntx].installedquip[opscnt].type+'");'
 				
-					// }
+					 }
 				
-
-			}	
-					//alert(sqlstatement);			
+				} //End of if in array
+			}	//end of the Objects Loop
+							
 			html5sql.process(sqlstatement,
 				 function(){
 					 //alert("Success - Finished Loading Orders");
 				 },
 				 function(error, statement){
 					 opMessage("Error: " + error.message + " when processing " + statement);
+					
 				 }        
 			);
 

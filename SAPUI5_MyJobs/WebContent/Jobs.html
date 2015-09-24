@@ -523,7 +523,7 @@ var formAssetDetails = new sap.m.Dialog("dlgAssetDetails",{
     contentWidth:"1em",
     buttons: [
   
-new sap.m.Button( {
+/* new sap.m.Button( {
     text: "Save",
     icon:"sap-icon://save",
     type: sap.m.ButtonType.Accept,
@@ -533,7 +533,7 @@ new sap.m.Button( {
     	formAssetDetails.close()
 		
     	} ]   
-}),
+}), */
 
 					new sap.m.Button( {
 					    text: "Close",
@@ -777,6 +777,21 @@ var standardList  = new sap.m.List("JobList",
 				  buildDetailsContent(oEvt.getParameter("listItem").getId());
 				  localStorage.setItem("SelectedItem",oEvt.getParameter("listItem"))
 				  oSplitApp.to("detail")}],
+			  mode:sap.m.ListMode.SingleSelectMaster,
+			  updateFinished : function(oEvent){   
+		          
+		      
+		          }  
+		  });
+var historyList  = new sap.m.List("HistoryList",
+		  {
+			  //items:standardListItem,
+			  itemPress:[function(oEvt) {	
+//				  buildDetailsContent(oEvt.getParameter("listItem").getId());
+//				  localStorage.setItem("SelectedItem",oEvt.getParameter("listItem"))
+//				  oSplitApp.to("detail")
+				alert("History Pressed")
+				}],
 			  mode:sap.m.ListMode.SingleSelectMaster,
 			  updateFinished : function(oEvent){   
 		          
@@ -1518,24 +1533,12 @@ function BuildFormAssets(assetid){
 	    									})
 	    									]          	                
 	        	                }),
-	           	                new sap.m.IconTabFilter( {
+	           	                new sap.m.IconTabFilter( 'AssetHistory',{
 	         	                   key:'AssetHistory',
 	         	                   tooltip: 'Order & Notification History',
 	         	                   icon: "sap-icon://work-history",
 	            	                   content:[
-	     									new sap.m.Table("AssetHistoryTable",{
-	     										width:'100%',
-	     										columns:[
-	     										         
-	     										         
-	     										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
-	     										        	 hAlign: 'Left',width: '30%', minScreenWidth : "" , demandPopin: false}),
-	     										         new sap.m.Column({header: new sap.m.Label({text:"Description"}),
-	     										        	 hAlign: 'Left',width: '50%',minScreenWidth : "" , demandPopin: true }),     	                         
-	     										         new sap.m.Column({header: new sap.m.Label({text:"Qty"}),
-	     										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
-	     										        	 ]
-	     									})
+
 	     									]          	                
 	         	                })				            	                
 	       	                ]
@@ -1556,12 +1559,181 @@ function BuildFormAssets(assetid){
 										number:asset_id,
 										numberUnit:asset_type,
 									});
+							formAssetDetails.addContent(objectHeader)	
+							formAssetDetails.addContent(tabBar)
+							 sap.ui.getCore().getElementById('AssetLongTextContent').setText(asset_name)	
+							
+							
+							
+							
+	
+							html5sql.process("select * from assetclassvals where id = '"+assetid+"'",
+									 function(transaction, results, rowsArray){
+											if(rowsArray.length>0){
+												var n = 0;
+												var opTable = sap.ui.getCore().getElementById('AssetCharacteristicsTable');
+												sap.ui.getCore().getElementById('AssetCharacteristicsTable').destroyItems();
+												while (n < rowsArray.length) {
+													
+											
+													opTable.addItem (new sap.m.ColumnListItem({
+														cells : 
+															[
+															new sap.m.Text({text: rowsArray[n].charact}),
+												            new sap.m.Text({text: rowsArray[n].description}),
+															new sap.m.Text({text:  rowsArray[n].valuechar})   
+													 		]
+														}));
+													n++;
+												 }
+										
 
+
+														
+
+											}
+											html5sql.process("select * from assetmeasurementpoints where id = '"+assetid+"'",
+													 function(transaction, results, rowsArray){
+															if(rowsArray.length>0){
+																var n = 0;
+																var opTable = sap.ui.getCore().getElementById('AssetMeasurementPointsTable');
+																sap.ui.getCore().getElementById('AssetMeasurementPointsTable').destroyItems();
+																while (n < rowsArray.length) {
+																	
+															
+																	opTable.addItem (new sap.m.ColumnListItem({
+																		cells : 
+																			[
+																			new sap.m.Text({text: rowsArray[n].mpoint}),
+																            new sap.m.Text({text: rowsArray[n].description}),
+																			new sap.m.Text({text:  rowsArray[n].value})   
+																	 		]
+																		}));
+																	n++;
+																 }
+														
+
+
+																		
+
+															}
+															html5sql.process("Select * from MyNotifications",
+																	 function(transaction, results, rowsArray){
+
+																		cnt = 0;
+																		while (cnt<rowsArray.length){
+																			item=rowsArray[cnt];
+																			
+																			
+																			
+																				
+																			 
+																			historyList.addItem(
+																					  new sap.m.ObjectListItem("Notif:"+item.notifno,
+																						  {
+																					  title:item.shorttext,
+																					  number:item.notifno, 
+																					  numberUnit:"Notification",
+																					
+																					  type:sap.m.ListType.Active,
+																				
+																					  attributes: [
+																									new sap.m.ObjectAttribute( {
+																									    text: 'Type:'+item.type
+																									}),
+																					                new sap.m.ObjectAttribute( {
+																					                    text: 'Start:'+formatDateTime1(item.startdate)
+																					                }),
+																					                new sap.m.ObjectAttribute( {
+																					                	 text: 'Reported By:'+item.reportedBy
+																					                }),
+																					                new sap.m.ObjectAttribute( {
+																					                	 text: 'Reported On:'+formatDateTime1(item.reportedon)
+																					                })
+																					                ],
+																					    firstStatus: [
+																					                new sap.m.ObjectStatus( {
+																					                    text: item.priority
+																					                })
+																					                ]
+																					  
+																						  })
+																					  );
+																				  cnt++;
+																		 }
+																		html5sql.process("Select * from MyOrders",
+																				 function(transaction, results, rowsArray){
+
+																					cnt = 0;
+																					while (cnt<rowsArray.length){
+																						item=rowsArray[cnt];
+																						
+																						
+																						
+																							
+																						 
+																						historyList.addItem(
+																								  new sap.m.ObjectListItem("Order:"+item.orderno,
+																									  {
+																								  title:item.shorttext,
+																								  number:item.orderno, 
+																								  numberUnit:"Order",
+																								
+																								  type:sap.m.ListType.Active,
+																							
+																								  attributes: [
+																								               new sap.m.ObjectAttribute( {
+																								                    text: 'Type:'+item.type
+																								                }),
+																								                new sap.m.ObjectAttribute( {
+																								                    text: 'Start:'+formatDateTime1(item.startdate)
+																								                }),
+																								                new sap.m.ObjectAttribute( {
+																								                	 text: 'Address:'+item.address
+																								                })
+																								                ],
+																								    firstStatus: [
+																								                new sap.m.ObjectStatus( {
+																								                    text: item.priority
+																								                })
+																								                ]
+																								  
+																									  })
+																								  );
+																							  cnt++;
+																					 }
+																					sap.ui.getCore().getElementById('AssetHistory').destroyContent();
+																					sap.ui.getCore().getElementById('AssetHistory').addContent(historyList);
+																					
+																				 },
+																				 function(error, statement){
+																					 alert(error+statement)
+																				 }        
+																				);
+																		
+																		
+																	 },
+																	 function(error, statement){
+																		 alert(error+statement)
+																	 }        
+																	);	
+															
+													 },
+													 function(error, statement){
+														
+													 }        
+													);
+											
+									 },
+									 function(error, statement){
+										
+									 }        
+									); 
 
 									
-									formAssetDetails.addContent(objectHeader)	
-									formAssetDetails.addContent(tabBar)
-									formAssetDetails.addContent(assetHistory)
+									//formAssetDetails.addContent(objectHeader)	
+									//formAssetDetails.addContent(tabBar)
+									
 						}
 				 },
 				 function(error, statement){
