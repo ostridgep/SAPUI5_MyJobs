@@ -16,7 +16,11 @@
 <script src="myresources/js/MyJobsDB.js"></script>
 <script src="myresources/js/MyJobsUtils.js"></script>
 <script type="text/javascript">
-html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
+html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);	
+var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
+var oLayout2 = new sap.ui.layout.form.ResponsiveGridLayout("L2");
+var selectedTableEntry='';
+var formMode='';
 var currentStatus;
 var firstNotification="";
 var EmployeeID = localStorage.getItem("EmployeeID")
@@ -59,7 +63,231 @@ var standardList  = new sap.m.List(
 	};
 	
 var firstEntry="none:-1";
+var formTaskStatus = new sap.m.Dialog("dlgTaskStatus",{
+    title:"Task Status",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+				new sap.m.Button( {
+				    text: "Save",
+				    type: 	sap.m.ButtonType.Accept,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formTaskStatus.close()
+						  } ]
+				}),
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formTaskStatus.close()
+						  } ]
+				})
+				],	
+//				  contentHeight:"50%",
+				  contentWidth:"35%",
+    content:[			
+			new sap.ui.layout.form.Form("TaskStatusForm",{
+			
+				editable: true,
+				layout: oLayout2,
+				formContainers: [
+					new sap.ui.layout.form.FormContainer("F0C1",{
+						
+						formElements: [
+						               
+							new sap.ui.layout.form.FormElement({
+								title: "1",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB01 - Aborted Wrong Job Type'})
+									]
+								}),
+							new sap.ui.layout.form.FormElement({
+								title: "2",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB02 - Aborted Not Skilled'})
+									]
+								}),
+							new sap.ui.layout.form.FormElement({
+								title: "3",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB03 - Aborted Other'})
+									]
+								}),
+							new sap.ui.layout.form.FormElement({
+								title: "1",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB04 - Aborted Wrong Job Type'})
+									]
+								}),
+							new sap.ui.layout.form.FormElement({
+								title: "2",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB05 - Aborted Not Skilled'})
+									]
+								}),
+							new sap.ui.layout.form.FormElement({
+								title: "3",
+								fields: [
+								        new sap.m.CheckBox({}),
+										new sap.m.Text({text: 'AB06 - Aborted Other'})
+									]
+								})
+							
+							]
+						})
+						
+						]
+			 	})
 
+            ],
+            beforeOpen:function(){
+            }
+ })
+var formTask = new sap.m.Dialog("dlgTask",{
+    title:"",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+					new sap.m.Button( {
+					    text: "Save",
+					    tap: [ function(oEvt) {		  
+									formTask.close()
+							  } ]
+					   
+					}),   
+					new sap.m.Button( {
+					    text: "Cancel",
+					    tap: [ function(oEvt) {		  						 
+					    	formTask.close()} ]   
+					})
+					],	
+		            contentWidth:"90%",
+		            
+		            	
+    content:[
+
+
+new sap.ui.layout.form.Form("TaskForm",{
+	//title: new sap.ui.core.Title({text: "Address Data", icon: "../../commons/demokit/images/address.gif", tooltip: "Title tooltip"}),
+	title: "",
+	editable: false,
+	layout: oLayout1,
+	formContainers: [
+		new sap.ui.layout.form.FormContainer("F1C1",{
+			title: "",
+			formElements: [
+				new sap.ui.layout.form.FormElement({
+					label: "Catalogue Type",
+					fields: [
+					         new sap.m.Input("TaskCatType",{})
+						]
+					}),
+				new sap.ui.layout.form.FormElement({
+					label: "Group",
+					fields: [
+					         new sap.m.Input("TaskGroup",{})
+						]
+					}),
+				new sap.ui.layout.form.FormElement({
+					label: "Code",
+					fields: [
+					         new sap.m.Input("TaskCode",{})
+						]
+					}),
+				new sap.ui.layout.form.FormElement({
+					label: "Text",
+					fields: [
+					         new sap.m.Input("TaskText",{})
+						]
+					})
+				]
+		}),
+		new sap.ui.layout.form.FormContainer("F1C2",{
+			title: "",
+			formElements: [
+				new sap.ui.layout.form.FormElement({
+					label: "SLA End Date",
+					fields: [
+							new sap.m.Input("TaskSLAEnd",{})
+							]
+					}),
+				new sap.ui.layout.form.FormElement({
+					label: "Planned Start Date",
+					fields: [
+							new sap.m.Input("TaskPlannedStart",{})
+							]
+					}),
+				new sap.ui.layout.form.FormElement({
+					label: "Planned End Date",
+					fields: [
+							new sap.m.Input("TaskPlannedEnd",{})
+							]
+					})
+				]
+		}),
+		new sap.ui.layout.form.FormContainer("F1C3",{
+			title: "",
+
+			formElements: [
+				new sap.ui.layout.form.FormElement({
+					label: "Status",
+					fields: [
+					        new sap.m.Input("TaskStatus",{}),
+					        new sap.m.Button( {
+							    text: "Change",
+							    tap: [ function(oEvt) {		  
+											formTaskStatus.open()
+									  } ]
+							   
+							})
+							]
+					}),
+
+				new sap.ui.layout.form.FormElement({
+					label: "Complete",
+					fields: [
+							new sap.m.Switch({state: false,type: sap.m.SwitchType.AcceptReject})
+							]
+					})
+				]
+			}),
+			new sap.ui.layout.form.FormContainer("F1C4",{
+				title: "",
+
+				formElements: [
+
+					new sap.ui.layout.form.FormElement({
+						label: "Long Text",
+						fields: [
+								new sap.m.TextArea("TaskLongText",{})
+								]
+						})
+					]
+				})
+	]
+})
+             
+
+
+            ],
+            beforeOpen:function(){
+            	var x =selectedTableEntry.split(":")
+            	this.setTitle(formMode+" Task Details")
+  				BuildTaskForm()
+            	if(formMode=="Display"){
+            		sap.ui.getCore().getElementById('TaskForm').setEditable(false)
+            	}
+            
+
+            },
+	 })
 var formNewNotif = new sap.m.Dialog("dlgNewNotif",{
     title:"Create Notification",
     modal: true,
@@ -307,7 +535,49 @@ return objectHeader;
 
 }
 
+function BuildTaskForm(){
 
+	var res = selectedTableEntry.split(":")
+
+	
+	SQLStatement="SELECT * from MyTasks where id = '"+res[1]+"'"
+
+	html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+
+			 if (rowsArray.length>0){
+				 
+				 
+				 sap.ui.getCore().getElementById('TaskCatType').setValue(rowsArray[0].task_cat_typ)
+				 sap.ui.getCore().getElementById('TaskGroup').setValue(rowsArray[0].task_codegrp+"-"+rowsArray[0].txt_taskgrp)
+				 sap.ui.getCore().getElementById('TaskCode').setValue(rowsArray[0].task_code+"-"+rowsArray[0].txt_taskcd)
+				 sap.ui.getCore().getElementById('TaskText').setValue(rowsArray[0].task_text)
+				 sap.ui.getCore().getElementById('TaskSLAEnd').setValue(formatDateTime1(rowsArray[0].sla_end_date+" "+rowsArray[0].sla_end_time))
+				 sap.ui.getCore().getElementById('TaskPlannedStart').setValue(formatDateTime1(rowsArray[0].plnd_start_date+" "+rowsArray[0].plnd_start_time))
+				 sap.ui.getCore().getElementById('TaskPlannedEnd').setValue(formatDateTime1(rowsArray[0].plnd_end_date+" "+rowsArray[0].plnd_end_time))
+				 sap.ui.getCore().getElementById('TaskStatus').setValue(rowsArray[0].status)
+				 sap.ui.getCore().getElementById('TaskLongText').setValue(rowsArray[0].longtext)
+
+				 
+			 }
+			
+			
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	 
+
+	 
+
+
+
+
+
+
+
+
+	}
 
 function buildDetailsContent(aid){
 
@@ -393,13 +663,49 @@ function buildDetailsTabs(){
 										new sap.m.Text( 'LongText',{})
 						             ]
 						 }),
-       
+						 new sap.m.IconTabFilter( 'TASKS',{
+	    	                   key:'Tasks',
+	    	                   tooltip: 'Tasks',
+	    	                   icon: "sap-icon://order-status",
+	       	                   content:[
+									new sap.m.Table("TasksTable",{
+										mode: sap.m.ListMode.SingleSelectMaster,
+										selectionChange: function(evt){
+											selectedTableEntry=evt.getParameter("listItem").getId()
+											formMode="Display"
+											formTask.open()
+									    },
+										columns:[
+										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
+										        	 hAlign: 'Left',width: '10%', minScreenWidth : "" , demandPopin: false}),
+										         new sap.m.Column({header: new sap.m.Label({text:"Group"}),
+										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: false}),
+										         new sap.m.Column({header: new sap.m.Label({text:"Code"}),
+										        	 hAlign: 'Left',width: '20%', minScreenWidth : "" , demandPopin: false}),
+										         new sap.m.Column({header: new sap.m.Label({text:"SLA End"}),
+										        	 hAlign: 'Left',width: '12%', minScreenWidth : "" , demandPopin: true}),
+											     new sap.m.Column({header: new sap.m.Label({text:"End Date"}),
+											       	 hAlign: 'Left',width: '12%', minScreenWidth : "" , demandPopin: true}),
+										         new sap.m.Column({header: new sap.m.Label({text:"Complete"}),
+										        	 hAlign: 'Left',width: '14%',minScreenWidth : "" , demandPopin: true }) ,
+										         new sap.m.Column({header: new sap.m.Label({text:"Del"}),
+										        	 hAlign: 'Left',width: '12%',minScreenWidth : "" , demandPopin: true }) 
+								           	     ]
+									})
+									]
+					    }),     
      	               new sap.m.IconTabFilter( 'ACTIVITIES',{
     	                   key:'Activities',
     	                   tooltip: 'Activities',
     	                   icon: "sap-icon://activities",
        	                   content:[
 								new sap.m.Table("ActivitiesTable",{
+									mode: sap.m.ListMode.SingleSelectMaster,
+									selectionChange: function(evt){
+										selectedTableEntry=evt.getParameter("listItem").getId()
+										formMode="Display"
+										formActivity.open()
+								    },
 									columns:[
 									         new sap.m.Column({header: new sap.m.Label({text:"Task"}),
 									        	 hAlign: 'Left',width: '8%', minScreenWidth : "" , demandPopin: false}),
@@ -419,31 +725,7 @@ function buildDetailsTabs(){
 				    }),
        	                
        	                
-					    
-       	                new sap.m.IconTabFilter( 'ITEMS',{
-        	                   key:'Items',
-        	                   tooltip: 'Items',
-        	                   icon: "sap-icon://activity-items",
-           	                   content:[
-    									new sap.m.Table("ItemsTable",{
-    										width:'100%',
-    										columns:[
-    										         
-    										         
-    										         new sap.m.Column({header: new sap.m.Label({text:"Id"}),
-    										        	 hAlign: 'Left',width: '10%', minScreenWidth : "" , demandPopin: false}),
-    										         new sap.m.Column({header: new sap.m.Label({text:"Group"}),
-    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true}),
-    										         new sap.m.Column({header: new sap.m.Label({text:"Code"}),
-    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),     	                         
-    										         new sap.m.Column({header: new sap.m.Label({text:"Object"}),
-    										        	 hAlign: 'Left',width: '20%',minScreenWidth : "" , demandPopin: true }),   
-    										        	 new sap.m.Column({header: new sap.m.Label({text:"Description"}),
-        										        	 hAlign: 'Left',width: '30%',minScreenWidth : "" , demandPopin: true }),  
-    										        	 ]
-    									})
-    									]          	                
-        	                }),
+
            	                new sap.m.IconTabFilter( 'CAUSES',{
          	                   key:'Causes',
          	                  tooltip: 'Causes',
@@ -451,6 +733,12 @@ function buildDetailsTabs(){
             	                   content:[
      									new sap.m.Table("CausesTable",{
      										width:'100%',
+    										mode: sap.m.ListMode.SingleSelectMaster,
+    										selectionChange: function(evt){
+    											selectedTableEntry=evt.getParameter("listItem").getId()
+    											formMode="Display"
+    											formCause.open()
+    									    },
      										columns:[
      										         
      										         
@@ -473,8 +761,14 @@ function buildDetailsTabs(){
           	                  tooltip: 'Effects',
           	                  icon: "sap-icon://list",
              	                   content:[
-      									new sap.m.Table("TConfsTable",{
+      									new sap.m.Table("EffectsTable",{
       										width:'100%',
+    										mode: sap.m.ListMode.SingleSelectMaster,
+    										selectionChange: function(evt){
+    											selectedTableEntry=evt.getParameter("listItem").getId()
+    											formMode="Display"
+    											formEffect.open()
+    									    },
       										columns:[
       										         
       										         
@@ -503,7 +797,12 @@ function buildDetailsTabs(){
 
 	}
 
-
+function deleteEntry(type){
+	alert("Deleteing "+type)
+}
+function completeEntry(type){
+	alert("Complete "+type)
+}
 function buildDetailsTabContent(notifNo){
 
 
@@ -535,22 +834,48 @@ html5sql.process("SELECT * FROM MyActivities where notifno = '"+notifNo+"' ;",
 		 }        
 		);	
 //Mpoints
-html5sql.process("SELECT * FROM MyItems where notifno = '"+notifNo+"' ;",
+html5sql.process("SELECT * FROM MyTasks where notifno = '"+notifNo+"' ;",
 		 function(transaction, results, rowsArray){
 			var n = 0;
-			var opTable = sap.ui.getCore().getElementById('ItemsTable');
+			var opTable = sap.ui.getCore().getElementById('TasksTable');
 			opTable.destroyItems();
 			while (n < rowsArray.length) {
-				
+
+		         new sap.m.Column({header: new sap.m.Label({text:"SLA End"}),
+		        	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: true}),
+			     new sap.m.Column({header: new sap.m.Label({text:"End Date"}),
+			       	 hAlign: 'Left',width: '15%', minScreenWidth : "" , demandPopin: true}),
+		         new sap.m.Column({header: new sap.m.Label({text:"Time"}),
+		        	 hAlign: 'Left',width: '10%',minScreenWidth : "" , demandPopin: true }),
+		         new sap.m.Column({header: new sap.m.Label({text:"Complete"}),
+		        	 hAlign: 'Left',width: '15%',minScreenWidth : "" , demandPopin: true }) 				
 		
-				opTable.addItem (new sap.m.ColumnListItem({
+				opTable.addItem (new sap.m.ColumnListItem("Task:"+rowsArray[n].id,{
 					cells : 
 						[
 						new sap.m.Text({text: rowsArray[n].item_id}),
-			            new sap.m.Text({text: rowsArray[n].stxt_grpcd}),
-						new sap.m.Text({text: rowsArray[n].txt_grpcd}),
-						new sap.m.Text({text: rowsArray[n].txt_objptcd}),
-			            new sap.m.Text({text: rowsArray[n].descript})   
+			            new sap.m.Text({text: rowsArray[n].task_codegrp}),
+						new sap.m.Text({text: rowsArray[n].task_code}),
+						new sap.m.Text({text: formatDateTime(rowsArray[n].sla_end_date+rowsArray[n].sla_end_time)}),
+						new sap.m.Text({text: formatDateTime(rowsArray[n].plnd_end_date+rowsArray[n].plnd_end_time)}),
+						new sap.m.Button( {
+			       			 
+			       			 icon:"sap-icon://complete",
+			       			
+			       				 press: [ function(){
+			       					completeEntry('Task');
+			       				
+			       						}]
+			       			 }) ,
+							new sap.m.Button( {
+				       			 
+				       			 icon:"sap-icon://delete",
+				       			
+				       				 press: [ function(){
+				       					deleteEntry('Task');
+				       				
+				       						}]
+				       			 })
 				 		]
 					}));
 				n++;
