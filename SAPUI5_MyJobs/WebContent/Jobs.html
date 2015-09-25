@@ -88,6 +88,7 @@ var tabContents=[]
 var tabFieldCnt=0
 var selectedOrderAssetID='';
 var selectedReserverMaterial='';
+var selectedHistoryDocument='';
 //var scanner = cordova.require("cordova/plugin/BarcodeScanner");
 var flocList = new sap.m.List("flocList",{
 	mode: sap.m.ListMode.SingleSelectLeft,
@@ -258,6 +259,91 @@ var formReserveMaterial = new sap.m.Dialog("dlgMaterialReserve",{
 				sap.ui.getCore().byId("ReserveMaterialDepot").setValue(x[2])
 				sap.ui.getCore().byId("ReserveMaterialDesc").setValue(x[3])
 				sap.ui.getCore().byId("ReserveMaterialAvailable").setValue(x[4])
+            },
+ })
+var formHistoryDocument = new sap.m.Dialog("dlgHistoryDocument",{
+    title:"Asset History Document",
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+
+				new sap.m.Button( {
+				    text: "Close",
+				    type: 	sap.m.ButtonType.Reject,
+				    tap: [ function(oEvt) {		  
+						 
+				    	formHistoryDocument.close()
+						  } ]
+				})
+				],	
+	            contentWidth:"60%",
+	            contentHeight: "60%",
+    content:[
+ 				 			new sap.ui.layout.form.SimpleForm({
+				minWidth : 1024,
+				maxContainerCols : 2,
+				content : [
+					
+							new sap.ui.layout.form.SimpleForm({
+								minWidth : 1024,
+								maxContainerCols : 2,
+								content : [
+									new sap.ui.core.Title("historyTitle",{ // this starts a new group
+										text: ""
+									}),
+
+									new sap.m.Label({
+										text: 'ID'
+									}),
+									new sap.m.Input("historyID",{
+										text: 'a'
+									}),
+									new sap.m.Label({
+										text: 'Type'
+									}),
+									new sap.m.Input("historyType",{
+										text: 'b'
+									}),
+									new sap.m.Label({
+										text: 'Priority'
+									}),
+									new sap.m.Input("historyPriority",{
+										text: 'c'
+									}),
+									new sap.m.Label({
+										text: 'Start Date'
+									}),
+									new sap.m.Input("historyStartDate",{
+										text: 'd'
+									}),
+									new sap.m.Label({
+										text: 'Description'
+									}),
+									new sap.m.Input("historyDescription",{
+										text: 'e'
+									}),
+									new sap.m.Label({
+										text: 'Details'
+									}),
+									new sap.m.TextArea("historyDetails",{
+										text: '69190 Walldorf, Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque risus nulla, interdum eget posuere non, tincidunt' + 
+												' eu felis. In hac habitasse platea dictumst. 69190 Walldorf, Lorem ipsum dolor sit amet, consectetur adipiscing elit.' + 
+												' Pellentesque risus nulla, interdum eget posuere non, tincidunt eu felis. In hac habitasse platea dictumst.'
+									})
+									
+								]
+							})			
+			               
+			                 
+						]
+ 					}),
+
+            ],
+            beforeOpen:function(){
+            	buildHistoryForm(selectedHistoryDocument)
+
+
             },
  })
 var formAssetCharacteristic = new sap.m.Dialog("dlgAssetCharacteristic",{
@@ -1007,10 +1093,8 @@ var historyList  = new sap.m.List("HistoryList",
 		  {
 			  //items:standardListItem,
 			  itemPress:[function(oEvt) {	
-//				  buildDetailsContent(oEvt.getParameter("listItem").getId());
-//				  localStorage.setItem("SelectedItem",oEvt.getParameter("listItem"))
-//				  oSplitApp.to("detail")
-				alert("History Pressed")
+				  selectedHistoryDocument=oEvt.getParameter("listItem").getId();
+				  formHistoryDocument.open()
 				}],
 			  mode:sap.m.ListMode.SingleSelectMaster,
 			  updateFinished : function(oEvent){   
@@ -1489,7 +1573,58 @@ return objectHeader;
 
 }
 
+function  buildHistoryForm(did){
+	
+	var res = did.split(":")
 
+	if(res[0]=='Notif'){
+		SQLStatement="Select * from MyNotifications where notifno = '"+res[1]+"'"
+	}else{
+		SQLStatement="Select * from MyOrders where orderno = '"+res[1]+"'"
+	}
+
+
+	html5sql.process(SQLStatement,
+		 function(transaction, results, rowsArray){
+
+			 if (rowsArray.length>0){
+				 if(res[0]=="Notif"){
+					 sap.ui.getCore().getElementById('historyTitle').setText("Notification")
+					 sap.ui.getCore().getElementById('historyID').setValue(rowsArray[0].notifno)
+					 sap.ui.getCore().getElementById('historyType').setValue(rowsArray[0].type)
+					 sap.ui.getCore().getElementById('historyPriority').setValue(rowsArray[0].priority)
+					 sap.ui.getCore().getElementById('historyDescription').setValue(rowsArray[0].shorttext)
+					 sap.ui.getCore().getElementById('historyDetails').setValue(rowsArray[0].longtext)
+					 sap.ui.getCore().getElementById('historyStartDate').setValue(formatDateTime1(rowsArray[0].startdate))
+				 }else{
+					 sap.ui.getCore().getElementById('historyTitle').setText("Order")
+					 sap.ui.getCore().getElementById('historyID').setValue(rowsArray[0].orderno)
+					 sap.ui.getCore().getElementById('historyType').setValue(rowsArray[0].type)
+					 sap.ui.getCore().getElementById('historyPriority').setValue(rowsArray[0].priority)
+					 sap.ui.getCore().getElementById('historyDescription').setValue(rowsArray[0].shorttext)
+					 sap.ui.getCore().getElementById('historyDetails').setValue(rowsArray[0].longtext)
+					 sap.ui.getCore().getElementById('historyStartDate').setValue(formatDateTime1(rowsArray[0].startdate)	)				 
+				 }
+				 
+		    	 
+				 
+			 }
+	
+		 },
+		 function(error, statement){
+			 //outputLogToDB(); 
+		 }        
+		);	
+
+	 
+
+
+
+
+ 
+
+
+	}
 
 function  buildDetailsContent(aid){
 currentOrderListItem=aid;
