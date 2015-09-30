@@ -25,6 +25,9 @@
 <script src="myresources/js/plugins/jSignature.CompressorSVG.js"></script>
 <script src="myresources/js/plugins/jSignature.UndoButton.js"></script> 
 <script src="myresources/js/plugins/signhere/jSignature.SignHere.js"></script> 
+<script src="myresources/js/Globals.js"></script>
+<script src="myresources/js/DlgForms.js"></script>
+<script src="myresources/js/NotificationFunctions.js"></script>
 
 <style>
 .formHdr {
@@ -74,7 +77,7 @@ directionsService;
 directionsDisplay = new google.maps.DirectionsRenderer(); 
 directionsService = new google.maps.DirectionsService();   
 var previousFloc;
-var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
+//var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
 var selectedFloc;
 var formtab=null;
 var tabBar=null;
@@ -670,6 +673,47 @@ new sap.m.Button( {
 	  } ,
 	  beforeClose:function(){
 		  
+	  }
+	
+	 })
+var formOrdNotification = new sap.m.Dialog("dlgOrdNotification",{
+    title:"Notification", 
+    horizontalScrolling:true,
+    verticalScrolling:true,
+    modal: true,
+    contentWidth:"1em",
+    buttons: [
+  
+
+					new sap.m.Button( {
+					    text: "Close",
+					    icon:"sap-icon://sys-cancel",
+					    type: sap.m.ButtonType.Reject,
+					    tap: [ function(oEvt) {		  
+							 
+					    	formOrdNotification.close()} ]   
+					}),
+					
+					],					
+    content:[buildNotificationDetails(),buildNotificationDetailsTabs()
+
+            ],
+            contentWidth:"95%",
+            contentHeight: "85%",
+      beforeOpen:function(){
+    	  //formOrdNotification.destroyContent();
+    	 
+    	  //formOrdNotification.addContent(buildNotificationDetails(),buildNotificationDetailsTabs())
+		  buildNotificationDetailsContent("Notif:"+currentNotifNo)
+		  buildNotificationDetailsTabContent(currentNotifNo)
+    	  selectedNotification=currentNotifNo
+
+
+      },
+      afterOpen:function(){  
+	  } ,
+	  beforeClose:function(){
+		 // formOrdNotification.destroyContent();
 	  }
 	
 	 })
@@ -1555,7 +1599,9 @@ function buildDetails(){
 	            	                new sap.m.ObjectAttribute('Equipment',{
 	            	                    
 	            	                }),
-new sap.m.ObjectAttribute('NotifNo',{
+									new sap.m.ObjectAttribute('NotifNo',{active: true,press: [ function(oEvt) {		  
+										 
+								    	formOrdNotification.open()} ] 
 	            	                    
 	            	                })
 	               	                ],
@@ -2520,7 +2566,7 @@ function formChanged(oEvt){
 function buildDetailsTabs(Jtype,surveyID){
 tabBar=null;
 formtab=null;
-sap.ui.getCore().getElementById('saveData').setVisible(false)
+//sap.ui.getCore().getElementById('saveData').setVisible(false)
 	if(Jtype=="FORM"){
 		sap.ui.getCore().getElementById('saveData').setVisible(true)
 		 formtab=new sap.m.IconTabFilter( 'FORM',{

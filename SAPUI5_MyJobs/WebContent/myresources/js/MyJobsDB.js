@@ -1219,11 +1219,10 @@ var ReportedBy=localStorage.getItem("MobileUser");
 	);
 	
 }
-function createTask(notifno,groupcd,codecd, grouptext, codetext, description)
+function createTask(notifno, cattype, groupcd, codecd, grouptext, codetext, description)
 {
-
-	html5sql.process("INSERT INTO MyTasks (notifno , item_id, task_codegrp , task_code , txt_taskgrp, txt_taskcd , task_text, task_cat_typ, plnd_start_date, plnd_start_time, plnd_end_date, plnd_end_time, sla_end_date, sla_end_time, longtext, complete, status) VALUES ("+
-					 "'"+notifno+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','"+getDate()+"','"+getTime()+"','','','"+ getDate()+"','"+getTime()+"','','','');",
+	html5sql.process("INSERT INTO MyTasks (notifno , item_id, task_cat_typ, task_codegrp , task_code , txt_taskgrp, txt_taskcd , task_text, plnd_start_date, plnd_start_time, plnd_end_date, plnd_end_time, sla_end_date, sla_end_time, longtext, complete, status) VALUES ("+
+					 "'"+notifno+"','NEW','"+cattype+"','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','"+getDate()+"','"+getTime()+"','','','"+ getDate()+"','"+getTime()+"','','','');",
 	 function(){
 		 //alert("Success dropping Tables");
 	 },
@@ -1234,10 +1233,10 @@ function createTask(notifno,groupcd,codecd, grouptext, codetext, description)
 }
 
 
-function createActivity(notifno,task,groupcd,codecd, grouptext, codetext, description)
+function createActivity(notifno, cattype, task,groupcd,codecd, grouptext, codetext, description)
 {
 	html5sql.process("INSERT INTO MyActivities (notifno ,task_id, item_id, act_codegrp , act_code , txt_actgrp, txt_actcd , act_text, act_id, act_cat_typ, start_date, start_time, end_date, end_time, long_text, status) VALUES ("+
-					 "'"+notifno+"','"+task+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','','"+getDate()+"','"+getTime()+"','','','');",
+					 "'"+notifno+"','"+task+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','"+cattype+"','"+getDate()+"','"+getTime()+"','','','','');",
 	 function(){
 		 //alert("Success dropping Tables");
 	 },
@@ -1246,11 +1245,11 @@ function createActivity(notifno,task,groupcd,codecd, grouptext, codetext, descri
 	 }        
 	);
 }
-function createEffect(notifno,groupcd,codecd, grouptext, codetext, description)
+function createEffect(notifno,cattype,groupcd,codecd, grouptext, codetext, description)
 {
 
 	html5sql.process("INSERT INTO MyEffects (notifno , item_id, effect_codegrp , effect_code , txt_effectgrp, txt_effectcd , value, task_id, effect_cat_typ ) VALUES ("+
-					 "'"+notifno+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','');",
+					 "'"+notifno+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','"+cattype+"');",
 	 function(){
 		 //alert("Success dropping Tables");
 	 },
@@ -1259,11 +1258,11 @@ function createEffect(notifno,groupcd,codecd, grouptext, codetext, description)
 	 }        
 	);
 }
-function createCause(notifno,groupcd,codecd, grouptext, codetext, description)
+function createCause(notifno,cattype,groupcd,codecd, grouptext, codetext, description)
 {
 
 	html5sql.process("INSERT INTO MyCauses (notifno , item_id, cause_codegrp , cause_code , txt_causegrp, txt_causecd , cause_text , cause_id, cause_cat_typ, long_text, status) VALUES ("+
-					 "'"+notifno+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','','','');",
+					 "'"+notifno+"','NEW','"+groupcd+"','"+codecd+"','"+grouptext+"','"+codetext+"','"+description+"','','"+cattype+"','','');",
 	 function(){
 		 //alert("Success dropping Tables");
 	 },
