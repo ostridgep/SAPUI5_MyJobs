@@ -2277,7 +2277,7 @@ function BuildQuestionHeaders(surveyID){
 	SQLStatement+="from SurveyGroup "
 	SQLStatement+="where surveyid = '"+surveyID+"'"
 	formtab.destroyContent()
-	var container =  new sap.m.Panel({
+	var container =  new sap.m.Panel("formContainer",{
 					
 					content:[
 					        
@@ -2318,7 +2318,9 @@ function BuildQuestionHeaders(surveyID){
 				
 
 				}
+				
 				formtab.addContent(container)
+				
 	 
 		 },
 		 function(error, statement){
@@ -2596,7 +2598,7 @@ formtab=null;
 				],
 				
 				items: [
-formtab,
+
 new sap.m.IconTabFilter( 'OBJECTS',{
     key:'Assets',
     tooltip: 'Assets',
@@ -2624,7 +2626,7 @@ new sap.m.IconTabFilter( 'OBJECTS',{
 								})
 								]
 					           	  
-				    }),
+				    }),formtab,
        	                new sap.m.IconTabFilter( 'LONGTEXT',{
     	                   key:'LongText',
     	                   tooltip: 'Long Text',
@@ -2763,6 +2765,7 @@ while(tabitemsdesc[cnt]!="END"){
 	       	                	 new sap.ui.layout.form.SimpleForm('TaskContent:'+tabitemsid[cnt],{
 	       	                			maxContainerCols: 2,
 	        	              			editable: true,
+	        	              			visible:false,
 	        	              			content: [
 
 	        	              				
@@ -2885,7 +2888,7 @@ var tabcontentQ;
 					}
 					n++;
 				 }
-
+				tabcontentQ.setVisible(true);
 				
 				
 
