@@ -1814,7 +1814,7 @@ html5sql.process(SQLStatement,
 				 				cnt++;
 				 			}
 			 					
-			 					sap.ui.getCore().getElementById('tabBar').setVisible(true)
+			 					
 							
 			 	},
 				 function(error, statement){
@@ -2738,13 +2738,19 @@ selectedTab="Task:"+tabitemsid[0]
 				select:[function(oEvt) {	
 						if(selectedTab!=oEvt.getParameters().key){
 							selectedTab=oEvt.getParameters().key;
-							//x=selectedTab.split(":")
-							//P100TabContData(currentNotifNo,x[1])
 						}
 					}
 				],
 				
-				items: [
+				items: [       	       
+				      new sap.m.IconTabFilter( 'LONGTEXT',{
+	                   key: 'LongText',
+	                   text: 'Long Text',
+	                   tooltip: 'Long Text',
+	                   content:[
+								new sap.m.Text( 'LongText',{})
+	                            ]
+	                })
 			            	                
        	                ]
 
@@ -2789,7 +2795,7 @@ tabitemsid=tabsid.split(":")
 	//Create Status Details
 sap.ui.getCore().getElementById('saveData').setVisible(true)
 
-
+sap.ui.getCore().getElementById('tabBar').setVisible(false)
 var cnt=0;
 	while(tabitemsid[cnt]!="END"){
 		P100TabCont(notifno,tabitemsid[cnt])
@@ -2797,6 +2803,7 @@ var cnt=0;
 	
 	cnt=cnt+1;
 	} 
+	sap.ui.getCore().getElementById('tabBar').setVisible(true)
 	
 }
 
