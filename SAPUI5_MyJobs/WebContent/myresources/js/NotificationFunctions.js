@@ -97,7 +97,7 @@ function BuildCodeSelect(CCGroup,Code)
 	html5sql.process(SQLStatement,
 		 function(transaction, results, rowsArray){
 			n=0;
-			alert(SQLStatement+"--"+ rowsArray.length)
+			//alert(SQLStatement+"--"+ rowsArray.length)
 		 	while (n < rowsArray.length) {
 				 sap.ui.getCore().getElementById(selectedListType).addItem(
 						 new sap.ui.core.Item("Code:"+rowsArray[n].id,{
@@ -398,7 +398,7 @@ html5sql.process(SQLStatement,
 		
 		 buildNotificationDetailsTabContent(notifno)
 		 currentPage=window.location.href
-		 if(currentPage.indexOf("Jobs.html") ==0){
+		 if(currentPage.indexOf("Jobs.html") <1){
 		 	oDetailPage.setFooter(longtextFooter)
 		 	}
 	 },
@@ -425,7 +425,8 @@ function buildNotificationDetailsTabs(){
 
 				select:[function(oEvt) {	
 				currentPage=window.location.href
-						if(currentPage.indexOf("Jobs.html") ==0){
+				//alert(currentPage+currentPage.indexOf("Jobs.html"))
+						if(currentPage.indexOf("Jobs.html") <1){
 						
 					 if(oEvt.getParameters().key=="Tasks"){oDetailPage.setFooter(tasksFooter)}
 					  if(oEvt.getParameters().key=="Activities"){oDetailPage.setFooter(activitiesFooter)}
@@ -692,15 +693,7 @@ html5sql.process("SELECT * FROM MyTasks where notifno = '"+notifNo+"' ;",
 						new sap.m.Text({text: rowsArray[n].task_code}),
 						new sap.m.Text({text: formatDateTime(rowsArray[n].sla_end_date+rowsArray[n].sla_end_time)}),
 						new sap.m.Text({text: formatDateTime(rowsArray[n].plnd_end_date+rowsArray[n].plnd_end_time)}),
-						new sap.m.Button( {
-			       			 
-			       			 icon:"sap-icon://complete",
-			       			
-			       				 press: [ function(evt){
-			       					deleteEntry(evt.getSource().getParent().getId());
-			       				
-			       						}]
-			       			 }) ,
+						new sap.m.Text({text: rowsArray[n].task_complete}),
 							del
 				 		]
 					}));
