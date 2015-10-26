@@ -12,7 +12,7 @@
 	data-sap-ui-theme="sap_bluecrystal">
 	
 </script>
-<script defer src="http://maps.googleapis.com/maps/api/js?sensor=false" ></script>
+
 
 <script src="myresources/js/html5sql.js"></script>  
 <script src="myresources/js/bgsync.js"></script>
@@ -3275,9 +3275,7 @@ function rebuildTimeConfs()
 <body id="body" class="sapUiBody">
 <script>
 $(function() {
-
-
-	
+	$.getScript("http://maps.googleapis.com/maps/api/js?sensor=false")
 	oSplitApp.onAfterRendering = function() {  
 		//selectListDefault() 
         }  
