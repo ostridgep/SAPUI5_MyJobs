@@ -75,6 +75,8 @@ function loadScript(src,callback){
   }
 loadScript('http://maps.googleapis.com/maps/api/js?sensor=false',
         function(){
+			directionsDisplay = new google.maps.DirectionsRenderer(); 
+			directionsService = new google.maps.DirectionsService();  
 	alert('google-loader has been loaded, but not the maps-API ');
 	});
 html5sql.openDatabase("com.pjo.myjobsbackfill","myjobsbackfill", 5*1024*1024);		
@@ -86,8 +88,7 @@ currentLon,
 currentPosition,
 directionsDisplay, 
 directionsService;
-directionsDisplay = new google.maps.DirectionsRenderer(); 
-directionsService = new google.maps.DirectionsService();   
+ 
 var previousFloc;
 //var oLayout1 = new sap.ui.layout.form.ResponsiveGridLayout("L1");
 var selectedFloc;
