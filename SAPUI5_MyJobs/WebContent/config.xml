@@ -4,7 +4,7 @@
     <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.pjo.sapui5myjobs"
-        version   = "1.150830.2000">
+        version   = "1.160508.2000">
 
     <name>SAPUI5 MyJobs</name>
     <description>
